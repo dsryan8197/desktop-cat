@@ -2,7 +2,7 @@
 
 A free, offline pixel-art cat that lives on your Mac desktop. Two cats to choose from: a fluffy tan-and-white one and a chunky orange one.
 
-<img src="images/desktop-cat.gif" alt="Desktop Cat: a pixel-art cat is carried by the scruff and dropped onto the top of a window, runs along it, bats and chases a yarn ball, then curls up to sleep and wakes again" width="720">
+<img src="images/desktop-cat-demo.gif" alt="Desktop Cat: a pixel-art cat is carried by the scruff and dropped onto the top of a window, runs along it, bats and chases a yarn ball, then curls up to sleep and wakes again" width="720">
 
 ## What the cat does
 - **Lives along the bottom of your screen.** Sits, blinks, walks about, grooms, stretches, yawns and takes naps, choosing at random. A Calm / Normal / Lively setting decides how busy it is.
