@@ -1,0 +1,6 @@
+.build/
+DesktopCat.app
+previews/
+.DS_Store
+__pycache__/
+.swiftpm/

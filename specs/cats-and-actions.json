@@ -1,0 +1,847 @@
+{
+  "schemaVersion": 1,
+  "cats": [
+    {
+      "id": "fluffy_b",
+      "name": "Fluffy Cat",
+      "style": "Simplified fluffy pixel sprite from reference image 1 B",
+      "reference": "references/selected_fluffy_B.png",
+      "assetDirectory": "assets/fluffy_b",
+      "colorways": [
+        "gray_white",
+        "orange_white",
+        "black",
+        "white"
+      ]
+    },
+    {
+      "id": "orange_c",
+      "name": "Chunky Cat",
+      "style": "Minimal thick-outline sprite from reference image 2 C",
+      "reference": "references/selected_chunky_C.png",
+      "assetDirectory": "assets/orange_c",
+      "colorways": [
+        "orange",
+        "gray",
+        "black",
+        "calico"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "idle_sit",
+      "label": "Idle sitting",
+      "category": "idle",
+      "playback": "loop",
+      "frames": [
+        "idle_sit_01.png",
+        "idle_sit_02.png",
+        "idle_sit_03.png",
+        "idle_sit_04.png"
+      ],
+      "suggestedTrigger": "at rest",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "blink",
+      "label": "Blink",
+      "category": "idle",
+      "playback": "once",
+      "frames": [
+        "blink_01.png",
+        "blink_02.png",
+        "blink_03.png",
+        "blink_04.png",
+        "blink_05.png",
+        "blink_06.png"
+      ],
+      "suggestedTrigger": "periodic while awake",
+      "assetStatus": "READY",
+      "source": "source_art/revisions_2026-10-16 (cleaned by tools/sprites/revise.py; originals in source_art/replaced/)"
+    },
+    {
+      "id": "walk",
+      "label": "Walk",
+      "category": "movement",
+      "playback": "loop",
+      "frames": [
+        "walk_01.png",
+        "walk_02.png",
+        "walk_03.png",
+        "walk_04.png",
+        "walk_05.png",
+        "walk_06.png",
+        "walk_07.png",
+        "walk_08.png"
+      ],
+      "suggestedTrigger": "when roaming",
+      "assetStatus": "READY",
+      "source": "source_art/revisions_2026-10-16 (cleaned by tools/sprites/revise.py; originals in source_art/replaced/)"
+    },
+    {
+      "id": "run",
+      "label": "Run",
+      "category": "movement",
+      "playback": "loop",
+      "frames": [
+        "run_01.png",
+        "run_02.png",
+        "run_03.png",
+        "run_04.png",
+        "run_05.png",
+        "run_06.png"
+      ],
+      "suggestedTrigger": "fast roaming or chase",
+      "assetStatus": "READY",
+      "source": "source_art/revisions_2026-10-16 (cleaned by tools/sprites/revise.py; originals in source_art/replaced/)"
+    },
+    {
+      "id": "stretch",
+      "label": "Stretch",
+      "category": "rest",
+      "playback": "once",
+      "frames": [
+        "stretch_01.png",
+        "stretch_02.png",
+        "stretch_03.png",
+        "stretch_04.png"
+      ],
+      "suggestedTrigger": "on wake or random",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "yawn",
+      "label": "Yawn",
+      "category": "rest",
+      "playback": "once",
+      "frames": [
+        "yawn_01.png",
+        "yawn_02.png",
+        "yawn_03.png",
+        "yawn_04.png"
+      ],
+      "suggestedTrigger": "before sleep",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "shake",
+      "label": "Shake",
+      "category": "groom",
+      "playback": "once",
+      "frames": [
+        "shake_01.png",
+        "shake_02.png",
+        "shake_03.png"
+      ],
+      "suggestedTrigger": "random",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "scratch",
+      "label": "Scratch",
+      "category": "groom",
+      "playback": "once",
+      "frames": [
+        "scratch_01.png",
+        "scratch_02.png"
+      ],
+      "suggestedTrigger": "random",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "groom",
+      "label": "Groom paw",
+      "category": "groom",
+      "playback": "once",
+      "frames": [
+        "groom_01.png",
+        "groom_02.png",
+        "groom_03.png",
+        "groom_04.png"
+      ],
+      "suggestedTrigger": "random",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "lie_down",
+      "label": "Lie down",
+      "category": "rest",
+      "playback": "once",
+      "frames": [
+        "lie_down_01.png",
+        "lie_down_02.png",
+        "lie_down_03.png",
+        "lie_down_04.png"
+      ],
+      "suggestedTrigger": "before sleeping",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "sleep",
+      "label": "Sleep breathing",
+      "category": "rest",
+      "playback": "loop",
+      "frames": [
+        "sleep_01.png",
+        "sleep_02.png",
+        "sleep_03.png",
+        "sleep_04.png",
+        "sleep_05.png",
+        "sleep_06.png"
+      ],
+      "suggestedTrigger": "when idle for long",
+      "assetStatus": "READY",
+      "source": "source_art/revisions_2026-10-16 (cleaned by tools/sprites/revise.py; originals in source_art/replaced/)"
+    },
+    {
+      "id": "wake_up",
+      "label": "Wake up",
+      "category": "rest",
+      "playback": "once",
+      "frames": [
+        "wake_up_01.png",
+        "wake_up_02.png"
+      ],
+      "suggestedTrigger": "after sleeping",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "get_up",
+      "label": "Get up",
+      "category": "rest",
+      "playback": "once",
+      "frames": [
+        "get_up_01.png",
+        "get_up_02.png",
+        "get_up_03.png",
+        "get_up_04.png"
+      ],
+      "suggestedTrigger": "stand from lying",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "sit_back",
+      "label": "Sit rear-facing",
+      "category": "idle",
+      "playback": "hold",
+      "frames": [
+        "sit_back_01.png",
+        "sit_back_02.png",
+        "sit_back_03.png",
+        "sit_back_04.png"
+      ],
+      "suggestedTrigger": "when facing away",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "stand",
+      "label": "Stand",
+      "category": "idle",
+      "playback": "hold",
+      "frames": [
+        "stand_01.png"
+      ],
+      "suggestedTrigger": "transition",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "turn",
+      "label": "Turn",
+      "category": "movement",
+      "playback": "once",
+      "frames": [
+        "turn_01.png"
+      ],
+      "suggestedTrigger": "change direction",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "look_up",
+      "label": "Look up",
+      "category": "attention",
+      "playback": "once",
+      "frames": [
+        "look_up_01.png",
+        "look_up_02.png",
+        "look_up_03.png",
+        "look_up_04.png"
+      ],
+      "suggestedTrigger": "cursor above",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "look_down",
+      "label": "Look down",
+      "category": "attention",
+      "playback": "once",
+      "frames": [
+        "look_down_01.png",
+        "look_down_02.png",
+        "look_down_03.png",
+        "look_down_04.png"
+      ],
+      "suggestedTrigger": "cursor below",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "look_around",
+      "label": "Look around",
+      "category": "attention",
+      "playback": "once",
+      "frames": [
+        "look_around_01.png"
+      ],
+      "suggestedTrigger": "random",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "jump_prep",
+      "label": "Prepare to jump",
+      "category": "movement",
+      "playback": "once",
+      "frames": [
+        "jump_prep_01.png"
+      ],
+      "suggestedTrigger": "before jump",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "jump",
+      "label": "Jump",
+      "category": "movement",
+      "playback": "once",
+      "frames": [
+        "jump_01.png",
+        "jump_02.png",
+        "jump_03.png",
+        "jump_04.png"
+      ],
+      "suggestedTrigger": "during leap",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "jump_up",
+      "label": "Jump up",
+      "category": "movement",
+      "playback": "once",
+      "frames": [
+        "jump_up_01.png",
+        "jump_up_02.png"
+      ],
+      "suggestedTrigger": "vertical leap",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "land",
+      "label": "Land",
+      "category": "movement",
+      "playback": "once",
+      "frames": [
+        "land_01.png",
+        "land_02.png",
+        "land_03.png",
+        "land_04.png"
+      ],
+      "suggestedTrigger": "after jump",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "climb",
+      "label": "Climb window",
+      "category": "window",
+      "playback": "loop",
+      "frames": [
+        "climb_01.png",
+        "climb_02.png",
+        "climb_03.png",
+        "climb_04.png",
+        "climb_05.png",
+        "climb_06.png"
+      ],
+      "suggestedTrigger": "window-edge climb",
+      "assetStatus": "READY",
+      "source": "source_art/revisions_2026-10-16 (cleaned by tools/sprites/revise.py; originals in source_art/replaced/)"
+    },
+    {
+      "id": "dangle",
+      "label": "Dangle",
+      "category": "window",
+      "playback": "hold",
+      "frames": [
+        "dangle_01.png",
+        "dangle_02.png",
+        "dangle_03.png",
+        "dangle_04.png"
+      ],
+      "suggestedTrigger": "hanging from edge",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "peek",
+      "label": "Peek over edge",
+      "category": "window",
+      "playback": "hold",
+      "frames": [
+        "peek_01.png",
+        "peek_02.png",
+        "peek_03.png",
+        "peek_04.png"
+      ],
+      "suggestedTrigger": "window top",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "hide",
+      "label": "Hide behind edge",
+      "category": "window",
+      "playback": "hold",
+      "frames": [
+        "hide_01.png"
+      ],
+      "suggestedTrigger": "window top",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "hang_edge",
+      "label": "Hang from edge",
+      "category": "window",
+      "playback": "hold",
+      "frames": [
+        "hang_edge_01.png",
+        "hang_edge_02.png",
+        "hang_edge_03.png",
+        "hang_edge_04.png"
+      ],
+      "suggestedTrigger": "window ledge",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "fall",
+      "label": "Fall",
+      "category": "movement",
+      "playback": "once",
+      "frames": [
+        "fall_01.png",
+        "fall_02.png",
+        "fall_03.png",
+        "fall_04.png",
+        "fall_05.png",
+        "fall_06.png"
+      ],
+      "suggestedTrigger": "safe cartoon fall",
+      "assetStatus": "READY",
+      "source": "source_art/revisions_2026-10-16 (cleaned by tools/sprites/revise.py; originals in source_art/replaced/)"
+    },
+    {
+      "id": "play_paw",
+      "label": "Bat paw",
+      "category": "play",
+      "playback": "once",
+      "frames": [
+        "play_paw_01.png",
+        "play_paw_02.png",
+        "play_paw_03.png",
+        "play_paw_04.png"
+      ],
+      "suggestedTrigger": "toy nearby",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "play_yarn",
+      "label": "Play with yarn",
+      "category": "play",
+      "playback": "once",
+      "frames": [
+        "play_yarn_01.png",
+        "play_yarn_02.png",
+        "play_yarn_03.png",
+        "play_yarn_04.png"
+      ],
+      "suggestedTrigger": "toy interaction",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "play_ball",
+      "label": "Play with ball",
+      "category": "play",
+      "playback": "once",
+      "frames": [
+        "play_ball_01.png",
+        "play_ball_02.png",
+        "play_ball_03.png"
+      ],
+      "suggestedTrigger": "toy interaction",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "bat",
+      "label": "Bat toy",
+      "category": "play",
+      "playback": "once",
+      "frames": [
+        "bat_01.png"
+      ],
+      "suggestedTrigger": "toy interaction",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "chase",
+      "label": "Chase cursor",
+      "category": "play",
+      "playback": "loop",
+      "frames": [
+        "chase_01.png",
+        "chase_02.png"
+      ],
+      "suggestedTrigger": "optional mouse play",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "pounce",
+      "label": "Pounce",
+      "category": "play",
+      "playback": "once",
+      "frames": [
+        "pounce_01.png",
+        "pounce_02.png",
+        "pounce_03.png",
+        "pounce_04.png"
+      ],
+      "suggestedTrigger": "after chase",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "roll_over",
+      "label": "Roll over",
+      "category": "play",
+      "playback": "once",
+      "frames": [
+        "roll_over_01.png",
+        "roll_over_02.png",
+        "roll_over_03.png",
+        "roll_over_04.png",
+        "roll_over_05.png",
+        "roll_over_06.png"
+      ],
+      "suggestedTrigger": "petting",
+      "assetStatus": "READY",
+      "source": "source_art/revisions_2026-10-16 (cleaned by tools/sprites/revise.py; originals in source_art/replaced/)"
+    },
+    {
+      "id": "belly_up",
+      "label": "Belly up",
+      "category": "rest",
+      "playback": "hold",
+      "frames": [
+        "belly_up_01.png",
+        "belly_up_02.png",
+        "belly_up_03.png",
+        "belly_up_04.png"
+      ],
+      "suggestedTrigger": "after rollover",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "paw_up",
+      "label": "Raise paw",
+      "category": "social",
+      "playback": "once",
+      "frames": [
+        "paw_up_01.png"
+      ],
+      "suggestedTrigger": "hello",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "carry_item",
+      "label": "Carry item",
+      "category": "play",
+      "playback": "loop",
+      "frames": [
+        "carry_item_01.png",
+        "carry_item_02.png"
+      ],
+      "suggestedTrigger": "pickup",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "drop_item",
+      "label": "Drop item",
+      "category": "play",
+      "playback": "once",
+      "frames": [
+        "drop_item_01.png"
+      ],
+      "suggestedTrigger": "after carry",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "happy",
+      "label": "Happy",
+      "category": "emotion",
+      "playback": "once",
+      "frames": [
+        "happy_01.png",
+        "happy_02.png",
+        "happy_03.png",
+        "happy_04.png"
+      ],
+      "suggestedTrigger": "petting",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "excited",
+      "label": "Excited",
+      "category": "emotion",
+      "playback": "once",
+      "frames": [
+        "excited_01.png"
+      ],
+      "suggestedTrigger": "toy",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "curious",
+      "label": "Curious",
+      "category": "emotion",
+      "playback": "once",
+      "frames": [
+        "curious_01.png"
+      ],
+      "suggestedTrigger": "novel activity",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "alert",
+      "label": "Alert",
+      "category": "emotion",
+      "playback": "once",
+      "frames": [
+        "alert_01.png"
+      ],
+      "suggestedTrigger": "sound or activity if enabled",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "scared",
+      "label": "Scared",
+      "category": "emotion",
+      "playback": "once",
+      "frames": [
+        "scared_01.png"
+      ],
+      "suggestedTrigger": "rare surprise",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "mad",
+      "label": "Mad",
+      "category": "emotion",
+      "playback": "once",
+      "frames": [
+        "mad_01.png",
+        "mad_02.png",
+        "mad_03.png",
+        "mad_04.png"
+      ],
+      "suggestedTrigger": "rare reaction",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "sad",
+      "label": "Sad",
+      "category": "emotion",
+      "playback": "once",
+      "frames": [
+        "sad_01.png",
+        "sad_02.png",
+        "sad_03.png",
+        "sad_04.png"
+      ],
+      "suggestedTrigger": "rare reaction",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "bored",
+      "label": "Bored",
+      "category": "emotion",
+      "playback": "hold",
+      "frames": [
+        "bored_01.png"
+      ],
+      "suggestedTrigger": "idle for long",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "eat",
+      "label": "Eat",
+      "category": "care",
+      "playback": "loop",
+      "frames": [
+        "eat_01.png",
+        "eat_02.png",
+        "eat_03.png",
+        "eat_04.png"
+      ],
+      "suggestedTrigger": "food bowl",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "drink",
+      "label": "Drink",
+      "category": "care",
+      "playback": "loop",
+      "frames": [
+        "drink_01.png",
+        "drink_02.png",
+        "drink_03.png",
+        "drink_04.png"
+      ],
+      "suggestedTrigger": "water bowl",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "beg",
+      "label": "Beg",
+      "category": "care",
+      "playback": "once",
+      "frames": [
+        "beg_01.png",
+        "beg_02.png",
+        "beg_03.png",
+        "beg_04.png"
+      ],
+      "suggestedTrigger": "request food",
+      "assetStatus": "READY",
+      "source": "source_art sheets (cleaned by tools/sprites/extract.py)"
+    },
+    {
+      "id": "knead",
+      "label": "Knead",
+      "category": "comfort",
+      "playback": "loop",
+      "frames": [
+        "knead_01.png",
+        "knead_02.png",
+        "knead_03.png",
+        "knead_04.png",
+        "knead_05.png",
+        "knead_06.png"
+      ],
+      "suggestedTrigger": "soft surface",
+      "assetStatus": "READY",
+      "source": "source_art/revisions_2026-10-16 (cleaned by tools/sprites/revise.py; originals in source_art/replaced/)"
+    },
+    {
+      "id": "lap",
+      "label": "Lap / relaxed rest",
+      "category": "comfort",
+      "playback": "hold",
+      "frames": [
+        "lap_01.png"
+      ],
+      "suggestedTrigger": "relaxation",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "flop",
+      "label": "Flop down",
+      "category": "rest",
+      "playback": "once",
+      "frames": [
+        "flop_01.png"
+      ],
+      "suggestedTrigger": "bored or tired",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "nap_window",
+      "label": "Nap on window",
+      "category": "window",
+      "playback": "loop",
+      "frames": [
+        "nap_window_01.png",
+        "nap_window_02.png"
+      ],
+      "suggestedTrigger": "rest at edge",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "wave",
+      "label": "Wave",
+      "category": "social",
+      "playback": "once",
+      "frames": [
+        "wave_01.png",
+        "wave_02.png"
+      ],
+      "suggestedTrigger": "greeting",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "carried",
+      "label": "Carried / dangling",
+      "category": "interaction",
+      "playback": "hold",
+      "frames": [
+        "carried_01.png"
+      ],
+      "suggestedTrigger": "dragging",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "sit_blink",
+      "label": "Sitting blink",
+      "category": "idle",
+      "playback": "once",
+      "frames": [
+        "sit_blink_01.png",
+        "sit_blink_02.png"
+      ],
+      "suggestedTrigger": "sitting",
+      "assetStatus": "TO_CREATE"
+    },
+    {
+      "id": "sleep_2",
+      "label": "Sleep second pose",
+      "category": "rest",
+      "playback": "loop",
+      "frames": [
+        "sleep_2_01.png"
+      ],
+      "suggestedTrigger": "sleep variation",
+      "assetStatus": "TO_CREATE"
+    }
+  ],
+  "notes": [
+    "Concept reference images are NOT animation-ready sheets or transparent sprites.",
+    "Frame counts are production targets, not extracted frames from reference images.",
+    "Artwork for each action and each cat must be created/approved before full animation can play.",
+    "READY actions come from the generated 4x8 sheets in source_art/, snapped to a real pixel grid by tools/sprites/extract.py. Each sheet row gives 4 frames, so those actions list 4 frames.",
+    "Oct 2026 revisions replaced walk (8 frames), run, blink, sleep, knead (front view), climb (rear view), fall and roll_over (6 frames each). roll_over now returns to lying on its side, so it is followed by get_up rather than belly_up."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "bowl_food": {
+    "left": 27,
+    "bottom": 1,
+    "width": 16,
+    "height": 8,
+    "frameWidth": 48,
+    "source": "eat_01"
+  },
+  "bowl_water": {
+    "left": 27,
+    "bottom": 1,
+    "width": 16,
+    "height": 8,
+    "frameWidth": 48,
+    "source": "drink_01"
+  },
+  "yarn": {
+    "left": 32,
+    "bottom": 1,
+    "width": 13,
+    "height": 13,
+    "frameWidth": 48,
+    "source": "play_yarn_01"
+  },
+  "yarn_end": {
+    "left": 32,
+    "bottom": 1,
+    "width": 13,
+    "height": 13,
+    "frameWidth": 48,
+    "source": "play_yarn_04"
+  }
+}

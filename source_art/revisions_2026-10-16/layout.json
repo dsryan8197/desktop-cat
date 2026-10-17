@@ -1,0 +1,46 @@
+{
+  "layout": {
+    "columns": 6,
+    "rows": 2,
+    "row_0": "fluffy",
+    "row_1": "orange",
+    "frame_order": "left to right"
+  },
+  "sheets": [
+    {
+      "file": "01_blink.png",
+      "width": 2172,
+      "height": 724
+    },
+    {
+      "file": "02_knead_front.png",
+      "width": 2172,
+      "height": 724
+    },
+    {
+      "file": "03_climb_rear.png",
+      "width": 2172,
+      "height": 724
+    },
+    {
+      "file": "04_fall.png",
+      "width": 2172,
+      "height": 724
+    },
+    {
+      "file": "05_roll.png",
+      "width": 2172,
+      "height": 724
+    },
+    {
+      "file": "06_sleep.png",
+      "width": 2172,
+      "height": 724
+    },
+    {
+      "file": "07_run.png",
+      "width": 2172,
+      "height": 724
+    }
+  ]
+}
