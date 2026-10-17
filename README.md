@@ -1,48 +1,45 @@
-# Desktop Cat — Claude Code Starter Pack
+# Desktop Cat
+
+A free, offline pixel-art cat that lives on your Mac desktop. Two cats to choose from: a fluffy tan-and-white one and a chunky orange one.
 
 <img src="images/desktop-cat.gif" alt="Desktop Cat: a pixel-art cat is carried by the scruff and dropped onto the top of a window, runs along it, bats and chases a yarn ball, then curls up to sleep and wakes again" width="720">
 
-Two character choices: **Fluffy B** (reference sheet 1, style B) and **Chunky C** (reference sheet 2, style C). Both share one action library, while sprites and palettes differ.
+## What the cat does
+- **Lives along the bottom of your screen.** Sits, blinks, walks about, grooms, stretches, yawns and takes naps, choosing at random. A Calm / Normal / Lively setting decides how busy it is.
+- **Notices you.** Looks at your cursor when it comes close, falls asleep when you've been away for a few minutes, and wakes up and waves when you come back.
+- **Likes being handled.** Drag it and it dangles by the scruff, then falls and lands. Wiggle the cursor over it to tickle it (it giggles and rolls over); move slowly over it to pet it (it kneads, then looks happy). Click to wake it from a nap.
+- **Needs looking after, gently.** Feed it fish or kibble, fill its water bowl, or toss it a ball of yarn from the menu. It walks to the bowl to eat or drink, or chases and bats the yarn. Hunger, thirst and fun run down over hours; when low, the cat begs, looks sad or gets bored. Nothing bad ever happens.
+- **Optional extras**, each off until you switch it on: chase your cursor and pounce, jump onto windows (it rides along when you move them), hang off window edges, and peek over the top of a window from behind it.
+- **Stays out of the way.** Clicks pass straight through everything except the cat's own pixels. It rests during full-screen apps and in Low Power Mode, and Reduce Motion turns off jumping and chasing.
 
-## Quick start
-1. Download `DesktopCatProject.zip` and unzip it onto your Mac **Desktop**.
-2. Open Terminal and run `cd ~/Desktop/DesktopCatProject` (if your unzip app nests another folder, use that folder instead).
-3. Run `claude` (requires Claude Code installed) and say **"Read CLAUDE.md and build stage 1 of this native macOS desktop-pet project."**
-4. Advance through the stages; review each one before continuing. On macOS you will need Xcode/Command Line Tools to compile the native app.
+## Build and run
+Needs macOS 14 or later and the Swift toolchain (Xcode or the Command Line Tools). No Xcode project is involved.
 
-## Contents
-- `CLAUDE.md`: implementation instructions for Claude Code.
-- `specs/cats-and-actions.json`: master list of actions for both cats; frame filenames are **targets**, not existing art.
-- `specs/BEHAVIOR_RULES.md`: AI-free pet behavior / desktop interaction logic.
-- `specs/SPRITE_PRODUCTION.md`: requirements to turn artwork into real sprites.
-- `src/cats.ts`: TypeScript-friendly data contracts if you prototype a playground UI.
-- `references/`: pictures identifying the specific chosen art styles plus context.
-- `assets/fluffy_b/` and `assets/orange_c/`: deliberately empty destinations for production-ready transparent PNG frames.
-
-## Important limitations
-This is a **development specification and starter pack**, not an already-built `.app` and not a completed animated sprites library. The concept images are visual references, not properly separated animation frames. Some listed actions are enhancements from the combined design brief, rather than explicitly depicted in both references.
-
-## Suggested first milestone
-A menu bar icon, 2 selectable pets, draggable pixel cat window, 4-frame walk, 2-frame blink, sit, lie down, 3-frame sleep, pause/hide. Build the pet system and import real art before adding dozens of behaviors.
-
-## Build and run (Swift package, no Xcode project)
+```bash
+git clone https://github.com/dsryan8197/desktop-cat.git
+cd desktop-cat
+./build.sh run
 ```
-./build.sh          # makes DesktopCat.app here; drag it into Applications
-./build.sh run      # build, then (re)start the cat
-swift test          # engine, transition, asset and settings tests
-```
-Source: `Sources/DesktopCat/` (engine: Manifest, SpriteLibrary, AnimationPlayer, Transitions,
-AnimationEngine, Brain; app: PetWindow, PetController, MenuBarController, Settings).
-The app bundles `assets/` and `specs/cats-and-actions.json`, so editing art or the manifest
-only needs a rebuild. Care props (bowls, yarn ball) are cut out of the finished eat/drink/play_yarn
-frames by `python3 tools/sprites/props.py` (writes `assets/<cat>/props/`), so they match the animation
-exactly. Testing aid: `open DesktopCat.app --args -demo feed|water|yarn`, or chain extras with e.g.
-`--args -pauseInLowPower NO -jumpOnWindows YES -hangOffEdges YES -demo jump,hang` (also `climb`, `peek`).
 
-Opt-in extras (menu → Extras) read only window positions and stacking order via
-`CGWindowListCopyWindowInfo`, which needs no Screen Recording or Accessibility permission.
-With them off, or no windows found, the cat stays on the desktop floor. Borrowed frames live in `SpriteLibrary.borrowedFrames`; frame speeds in
-`FrameTiming`; behaviour numbers in `BrainTuning` (Brain.swift), with Calm / Normal / Lively presets in `Energy`.
+`./build.sh` builds `DesktopCat.app` (Apple Silicon and Intel) in the project folder; `./build.sh run` also starts it. Drag the app into Applications to keep it. It isn't notarized, so the first time you open a copy from elsewhere, use **System Settings → Privacy & Security → Open Anyway**.
+
+## Using it
+Everything is in the cat icon in the menu bar:
+- **Pause / Hide / Bring Cat to This Screen**
+- **Care:** food, water and fun levels, Feed (fish or kibble), Fill Water, Toss Yarn Ball
+- **Cat** (switch cats; position and settings are kept), **Size** (1×–6×, always crisp), **Energy** (Calm, Normal, Lively)
+- **Extras:** Chase My Cursor, Jump onto Windows, Hang off Window Edges, Peek from Behind Windows, plus the full-screen and Low Power Mode rest options
+- **Play Action:** try any animation. Actions without finished art show a clearly labelled placeholder.
+- **Launch at Login**, **Quit**
+
+## Privacy
+Fully offline: no accounts, no network, no AI services. It needs no Screen Recording or Accessibility permission. The window extras read only where other windows are and how they stack, which macOS shares with every app; they never see titles or contents.
+
+## For developers
+- **Code:** `Sources/DesktopCat/`. The animation engine (`Manifest`, `SpriteLibrary`, `AnimationPlayer`, `Transitions`, `AnimationEngine`) is driven by `specs/cats-and-actions.json`. Behaviour lives in `Brain`, interactions in `Gestures`, care in `CareController` and `Needs`, and the window extras in `ExtrasController` and `Surfaces`.
+- **Tuning:** behaviour numbers are in `BrainTuning` (Brain.swift), with the Calm / Normal / Lively presets in `Energy`; animation speeds are in `FrameTiming`; actions that reuse finished frames are listed in `SpriteLibrary.borrowedFrames`.
+- **Specs:** `specs/BEHAVIOR_RULES.md` and `specs/SPRITE_PRODUCTION.md` describe the intended behaviour and art rules; `CLAUDE.md` holds the original staged build brief.
+- **Testing aids:** `open DesktopCat.app --args -demo feed` (or `water`, `yarn`) runs a care action at launch. Extras can be chained, with launch arguments turning them on just for that run, e.g. `--args -pauseInLowPower NO -jumpOnWindows YES -hangOffEdges YES -demo jump,hang` (also `climb`, `peek`).
 
 ## Tests (`swift test`, about 100)
 Engine and playback, every action-to-action transition, behaviour over simulated hours,
