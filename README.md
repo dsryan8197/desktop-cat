@@ -56,3 +56,6 @@ no duplicate frames, outline colour, props).
   the replaced originals are kept in `source_art/replaced/`. Safe to re-run.
 - `tools/sprites/props.py` — bowls and yarn ball cut from the eat/drink/play_yarn frames.
 - `tools/sprites/preview.py [action ...]` — animated GIFs in `previews/` at the app's real speed.
+
+## License
+MIT — see [LICENSE](LICENSE).
