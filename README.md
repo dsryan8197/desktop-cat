@@ -1,5 +1,7 @@
 # Desktop Cat — Claude Code Starter Pack
 
+<img src="images/desktop-cat.gif" alt="Desktop Cat: a pixel-art cat is carried by the scruff and dropped onto the top of a window, runs along it, bats and chases a yarn ball, then curls up to sleep and wakes again" width="720">
+
 Two character choices: **Fluffy B** (reference sheet 1, style B) and **Chunky C** (reference sheet 2, style C). Both share one action library, while sprites and palettes differ.
 
 ## Quick start
