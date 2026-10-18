@@ -16,7 +16,7 @@ A free, offline pixel-art cat that lives on your Mac desktop. Two cats to choose
 Needs macOS 14 or later and the Swift toolchain (Xcode or the Command Line Tools). No Xcode project is involved.
 
 ```bash
-git clone https://github.com/dsryan8197/desktop-cat.git
+git clone https://github.com/hi-dad/desktop-cat.git
 cd desktop-cat
 ./build.sh run
 ```
