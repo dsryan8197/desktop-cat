@@ -1,0 +1,46 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    permissions:
+      contents: write # to publish a release when main changes
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swiftc --version
+
+      - name: Build the app and DesktopCat.dmg
+        run: ./build.sh dist
+
+      - name: Verify bundle
+        run: |
+          test -x "DesktopCat.app/Contents/MacOS/DesktopCat"
+          plutil -lint "DesktopCat.app/Contents/Info.plist"
+          codesign --verify --verbose "DesktopCat.app"
+          lipo "DesktopCat.app/Contents/MacOS/DesktopCat" -verify_arch arm64 x86_64
+          hdiutil verify dist/DesktopCat.dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DesktopCat
+          path: dist/DesktopCat.dmg
+
+      # Every update to main becomes the new download behind the README button.
+      - name: Publish release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(plutil -extract CFBundleShortVersionString raw "DesktopCat.app/Contents/Info.plist")"
+          gh release create "build-$GITHUB_RUN_NUMBER" dist/DesktopCat.dmg \
+            --target "$GITHUB_SHA" --latest \
+            --title "Desktop Cat $version (build $GITHUB_RUN_NUMBER)" --generate-notes

@@ -4,3 +4,4 @@ previews/
 .DS_Store
 __pycache__/
 .swiftpm/
+dist/

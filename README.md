@@ -4,6 +4,31 @@ A free, offline pixel-art cat that lives on your Mac desktop. Two cats to choose
 
 <img src="images/desktop-cat-demo.gif" alt="Desktop Cat: a pixel-art cat is carried by the scruff and dropped onto the top of a window, runs along it, bats and chases a yarn ball, then curls up to sleep and wakes again" width="720">
 
+## ⬇️ [Download Desktop Cat for Mac](https://github.com/hi-dad/desktop-cat/releases/latest/download/DesktopCat.dmg)
+
+Needs macOS 14 or newer. Works on Apple Silicon and Intel Macs. Free, offline, no account. This link always gets the newest version.
+
+## Install
+
+1. Open the downloaded **DesktopCat.dmg**.
+2. Drag **Desktop Cat** onto the **Applications** folder in that window. (Don't open it from inside this window.)
+3. Open **Applications** and double-click **Desktop Cat**.
+4. Look for the cat icon in the menu bar (top right of the screen). Everything is in there.
+
+### The first time you open it
+
+Your Mac will say it can't verify the app. That's normal for apps that aren't from the App Store, and you only need to do this once.
+
+1. Click **Done**. Don't click Move to Trash.
+2. Open **System Settings**, click **Privacy & Security**, scroll down, and click **Open Anyway** next to Desktop Cat. Enter your Mac password if asked.
+3. Click **Open** on the last prompt. From now on Desktop Cat opens normally.
+
+If you don't see **Open Anyway**, try opening Desktop Cat once more, then go straight back to Privacy & Security. The button only appears for about an hour after the app is blocked.
+
+**To update:** download again and replace the copy in Applications. Your settings stay.
+
+**To uninstall:** cat icon → **Quit Desktop Cat**, then drag Desktop Cat from Applications to the Trash.
+
 ## What the cat does
 - **Lives along the bottom of your screen.** Sits, blinks, walks about, grooms, stretches, yawns and takes naps, choosing at random. A Calm / Normal / Lively setting decides how busy it is.
 - **Notices you.** Looks at your cursor when it comes close, falls asleep when you've been away for a few minutes, and wakes up and waves when you come back.
@@ -12,7 +37,7 @@ A free, offline pixel-art cat that lives on your Mac desktop. Two cats to choose
 - **Optional extras**, each off until you switch it on: chase your cursor and pounce, jump onto windows (it rides along when you move them), hang off window edges, and peek over the top of a window from behind it.
 - **Stays out of the way.** Clicks pass straight through everything except the cat's own pixels. It rests during full-screen apps and in Low Power Mode, and Reduce Motion turns off jumping and chasing.
 
-## Build and run
+## Build it yourself
 Needs macOS 14 or later and the Swift toolchain (Xcode or the Command Line Tools). No Xcode project is involved.
 
 ```bash
@@ -21,7 +46,7 @@ cd desktop-cat
 ./build.sh run
 ```
 
-`./build.sh` builds `DesktopCat.app` (Apple Silicon and Intel) in the project folder; `./build.sh run` also starts it. Drag the app into Applications to keep it. It isn't notarized, so the first time you open a copy from elsewhere, use **System Settings → Privacy & Security → Open Anyway**.
+`./build.sh` builds `DesktopCat.app` (Apple Silicon and Intel) in the project folder; `./build.sh run` also starts it, and `./build.sh dist` makes `dist/DesktopCat.dmg`. Drag the app into Applications to keep it.
 
 ## Using it
 Everything is in the cat icon in the menu bar:
