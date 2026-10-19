@@ -88,13 +88,64 @@ let designs: [String: Design] = [
         p.fill(p.circle(78, 42, 7.5), hex(0xFFFFFF), lift: true)
         p.fill(p.circle(78, 42, 3.2), hex(0x8E7CF5))
     },
-    // A cat sitting in front of a frosted window, with a ball of yarn.
+    // A cute cat face peeking up in front of a frosted window.
     "desktop-cat": Design(top: 0xFFD08A, bottom: 0xFF8A4C) { p in
-        p.glass(p.rr(16, 22, 72, 52, 10), fill: 0.32)
-        p.symbol("cat.fill", in: CGRect(x: 22, y: 34, width: 50, height: 46), hex(0xFFFFFF), lift: true)
-        p.fill(p.circle(80, 76, 8), hex(0xFFFFFF, 0.95), lift: true)
-        p.ctx.addArc(center: CGPoint(x: 80, y: 76), radius: 4.5, startAngle: 0.6, endAngle: 3.6, clockwise: false)
-        p.ctx.setStrokeColor(hex(0xE8662A, 0.8).cgColor); p.ctx.setLineWidth(1.6); p.ctx.strokePath()
+        p.glass(p.rr(14, 16, 76, 56, 11), fill: 0.3)
+        func mirror(_ x: CGFloat) -> CGFloat { 104 - x }
+        // Head: round face plus two ears, drawn as one layer so it casts one shadow.
+        p.ctx.saveGState(); p.shadow(true)
+        p.ctx.beginTransparencyLayer(auxiliaryInfo: nil)
+        p.fill(CGPath(ellipseIn: CGRect(x: 22, y: 38, width: 60, height: 48), transform: nil), hex(0xFFFFFF))
+        for flip in [false, true] {
+            let x: (CGFloat) -> CGFloat = flip ? mirror : { $0 }
+            let ear = CGMutablePath()
+            ear.move(to: CGPoint(x: x(25), y: 56))
+            ear.addLine(to: CGPoint(x: x(28), y: 27))
+            ear.addQuadCurve(to: CGPoint(x: x(35), y: 25), control: CGPoint(x: x(29), y: 20))
+            ear.addLine(to: CGPoint(x: x(50), y: 42))
+            ear.closeSubpath()
+            p.fill(ear, hex(0xFFFFFF))
+        }
+        p.ctx.endTransparencyLayer(); p.ctx.restoreGState()
+        // Pink inside the ears.
+        for flip in [false, true] {
+            let x: (CGFloat) -> CGFloat = flip ? mirror : { $0 }
+            let ear = CGMutablePath()
+            ear.move(to: CGPoint(x: x(30), y: 45))
+            ear.addLine(to: CGPoint(x: x(31), y: 31))
+            ear.addQuadCurve(to: CGPoint(x: x(35), y: 30), control: CGPoint(x: x(31.5), y: 27))
+            ear.addLine(to: CGPoint(x: x(44), y: 41))
+            ear.closeSubpath()
+            p.fill(ear, hex(0xFFB7B2, 0.85))
+        }
+        let ink = hex(0x4A3428)
+        // Big shiny eyes.
+        for x in [CGFloat(40), 64] {
+            p.fill(CGPath(ellipseIn: CGRect(x: x - 4.6, y: 55, width: 9.2, height: 11), transform: nil), ink)
+            p.fill(p.circle(x + 1.6, 58.2, 1.9), hex(0xFFFFFF))
+            p.fill(p.circle(x - 1.6, 62.6, 0.9), hex(0xFFFFFF, 0.8))
+        }
+        // Rosy cheeks.
+        for x in [CGFloat(32), 72] {
+            p.fill(CGPath(ellipseIn: CGRect(x: x - 5, y: 66, width: 10, height: 5.5), transform: nil), hex(0xFF9E9E, 0.45))
+        }
+        // Nose and a little "w" mouth.
+        let nose = CGMutablePath()
+        nose.move(to: CGPoint(x: 48.6, y: 66.5)); nose.addLine(to: CGPoint(x: 55.4, y: 66.5))
+        nose.addQuadCurve(to: CGPoint(x: 52, y: 70.6), control: CGPoint(x: 55, y: 69))
+        nose.addQuadCurve(to: CGPoint(x: 48.6, y: 66.5), control: CGPoint(x: 49, y: 69))
+        p.fill(nose, hex(0xF27C82))
+        p.ctx.move(to: CGPoint(x: 52, y: 70.4)); p.ctx.addLine(to: CGPoint(x: 52, y: 72.4))
+        p.ctx.move(to: CGPoint(x: 46.6, y: 72)); p.ctx.addQuadCurve(to: CGPoint(x: 52, y: 72.4), control: CGPoint(x: 49, y: 75.6))
+        p.ctx.addQuadCurve(to: CGPoint(x: 57.4, y: 72), control: CGPoint(x: 55, y: 75.6))
+        p.ctx.setStrokeColor(ink.withAlphaComponent(0.75).cgColor); p.ctx.setLineWidth(1.3)
+        p.ctx.setLineCap(.round); p.ctx.setLineJoin(.round); p.ctx.strokePath()
+        // Whiskers.
+        let whisker = hex(0x4A3428, 0.5)
+        for (dy, endDy) in [(CGFloat(-2), CGFloat(-6)), (0.5, 0.5), (3, 7)] {
+            p.line(36, 69 + dy, 12, 69 + endDy, whisker, 1.1)
+            p.line(68, 69 + dy, 92, 69 + endDy, whisker, 1.1)
+        }
     },
     // A pile of copied cards with a count badge.
     "copy-collector": Design(top: 0xA8F0C6, bottom: 0x3FBF9B) { p in
@@ -130,10 +181,10 @@ let designs: [String: Design] = [
         }
     },
     // A note with bullet points.
-    "jot": Design(top: 0xFFF2A6, bottom: 0xF7C548) { p in
+    "jot": Design(top: 0xFFC2E6, bottom: 0xD46BD8) { p in
         p.glass(p.rr(18, 18, 68, 68, 12), fill: 0.65, width: 1.4, lift: true)
         p.line(18, 31, 86, 31, hex(0xFFFFFF, 0.9), 1.2)
-        let ink = hex(0xC98A0E, 0.85), soft = hex(0xC98A0E, 0.45)
+        let ink = hex(0xA63DB3, 0.85), soft = hex(0xA63DB3, 0.45)
         for (i, len) in [32, 26, 20].enumerated() {
             let y = CGFloat(45 + i * 13)
             p.fill(p.circle(31, y, 3.6), ink)
