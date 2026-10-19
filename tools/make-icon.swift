@@ -88,63 +88,58 @@ let designs: [String: Design] = [
         p.fill(p.circle(78, 42, 7.5), hex(0xFFFFFF), lift: true)
         p.fill(p.circle(78, 42, 3.2), hex(0x8E7CF5))
     },
-    // A cute cat face peeking up in front of a frosted window.
+    // A cute cat face made of frosted glass.
     "desktop-cat": Design(top: 0xFFD08A, bottom: 0xFF8A4C) { p in
-        p.glass(p.rr(14, 16, 76, 56, 11), fill: 0.3)
         func mirror(_ x: CGFloat) -> CGFloat { 104 - x }
-        // Head: round face plus two ears, drawn as one layer so it casts one shadow.
-        p.ctx.saveGState(); p.shadow(true)
-        p.ctx.beginTransparencyLayer(auxiliaryInfo: nil)
-        p.fill(CGPath(ellipseIn: CGRect(x: 22, y: 38, width: 60, height: 48), transform: nil), hex(0xFFFFFF))
+        // Face and ears as one outline, so the glass has a single clean edge.
+        var head: CGPath = CGPath(ellipseIn: CGRect(x: 20, y: 34, width: 64, height: 52), transform: nil)
         for flip in [false, true] {
             let x: (CGFloat) -> CGFloat = flip ? mirror : { $0 }
             let ear = CGMutablePath()
-            ear.move(to: CGPoint(x: x(25), y: 56))
-            ear.addLine(to: CGPoint(x: x(28), y: 27))
-            ear.addQuadCurve(to: CGPoint(x: x(35), y: 25), control: CGPoint(x: x(29), y: 20))
-            ear.addLine(to: CGPoint(x: x(50), y: 42))
+            ear.move(to: CGPoint(x: x(23), y: 54))
+            ear.addLine(to: CGPoint(x: x(26), y: 22))
+            ear.addQuadCurve(to: CGPoint(x: x(33), y: 20), control: CGPoint(x: x(27), y: 15))
+            ear.addLine(to: CGPoint(x: x(50), y: 38))
             ear.closeSubpath()
-            p.fill(ear, hex(0xFFFFFF))
+            head = head.union(ear)
         }
-        p.ctx.endTransparencyLayer(); p.ctx.restoreGState()
-        // Pink inside the ears.
+        p.glass(head, fill: 0.5, edge: 0.95, width: 1.6)
+        // Inner ears, a soft pink tint.
         for flip in [false, true] {
             let x: (CGFloat) -> CGFloat = flip ? mirror : { $0 }
             let ear = CGMutablePath()
-            ear.move(to: CGPoint(x: x(30), y: 45))
-            ear.addLine(to: CGPoint(x: x(31), y: 31))
-            ear.addQuadCurve(to: CGPoint(x: x(35), y: 30), control: CGPoint(x: x(31.5), y: 27))
-            ear.addLine(to: CGPoint(x: x(44), y: 41))
+            ear.move(to: CGPoint(x: x(29), y: 42))
+            ear.addLine(to: CGPoint(x: x(30), y: 28))
+            ear.addQuadCurve(to: CGPoint(x: x(34), y: 27), control: CGPoint(x: x(30.5), y: 24))
+            ear.addLine(to: CGPoint(x: x(44), y: 38))
             ear.closeSubpath()
-            p.fill(ear, hex(0xFFB7B2, 0.85))
+            p.fill(ear, hex(0xFFD2C8, 0.75))
         }
-        let ink = hex(0x4A3428)
-        // Big shiny eyes.
-        for x in [CGFloat(40), 64] {
-            p.fill(CGPath(ellipseIn: CGRect(x: x - 4.6, y: 55, width: 9.2, height: 11), transform: nil), ink)
-            p.fill(p.circle(x + 1.6, 58.2, 1.9), hex(0xFFFFFF))
-            p.fill(p.circle(x - 1.6, 62.6, 0.9), hex(0xFFFFFF, 0.8))
+        let ink = hex(0xB5470F, 0.85)
+        // Eyes with a glint.
+        for x in [CGFloat(39), 65] {
+            p.fill(CGPath(ellipseIn: CGRect(x: x - 4.4, y: 54, width: 8.8, height: 10.5), transform: nil), ink)
+            p.fill(p.circle(x + 1.5, 57, 1.8), hex(0xFFFFFF, 0.95))
         }
-        // Rosy cheeks.
-        for x in [CGFloat(32), 72] {
-            p.fill(CGPath(ellipseIn: CGRect(x: x - 5, y: 66, width: 10, height: 5.5), transform: nil), hex(0xFF9E9E, 0.45))
+        // Cheeks.
+        for x in [CGFloat(30), 74] {
+            p.fill(CGPath(ellipseIn: CGRect(x: x - 5, y: 65, width: 10, height: 5), transform: nil), hex(0xFF8F7A, 0.35))
         }
-        // Nose and a little "w" mouth.
+        // Nose and mouth.
         let nose = CGMutablePath()
-        nose.move(to: CGPoint(x: 48.6, y: 66.5)); nose.addLine(to: CGPoint(x: 55.4, y: 66.5))
-        nose.addQuadCurve(to: CGPoint(x: 52, y: 70.6), control: CGPoint(x: 55, y: 69))
-        nose.addQuadCurve(to: CGPoint(x: 48.6, y: 66.5), control: CGPoint(x: 49, y: 69))
-        p.fill(nose, hex(0xF27C82))
-        p.ctx.move(to: CGPoint(x: 52, y: 70.4)); p.ctx.addLine(to: CGPoint(x: 52, y: 72.4))
-        p.ctx.move(to: CGPoint(x: 46.6, y: 72)); p.ctx.addQuadCurve(to: CGPoint(x: 52, y: 72.4), control: CGPoint(x: 49, y: 75.6))
-        p.ctx.addQuadCurve(to: CGPoint(x: 57.4, y: 72), control: CGPoint(x: 55, y: 75.6))
-        p.ctx.setStrokeColor(ink.withAlphaComponent(0.75).cgColor); p.ctx.setLineWidth(1.3)
+        nose.move(to: CGPoint(x: 48.8, y: 65.5)); nose.addLine(to: CGPoint(x: 55.2, y: 65.5))
+        nose.addQuadCurve(to: CGPoint(x: 52, y: 69.4), control: CGPoint(x: 54.8, y: 68))
+        nose.addQuadCurve(to: CGPoint(x: 48.8, y: 65.5), control: CGPoint(x: 49.2, y: 68))
+        p.fill(nose, hex(0xF06A5A, 0.9))
+        p.ctx.move(to: CGPoint(x: 52, y: 69.2)); p.ctx.addLine(to: CGPoint(x: 52, y: 71.2))
+        p.ctx.move(to: CGPoint(x: 46.8, y: 70.8)); p.ctx.addQuadCurve(to: CGPoint(x: 52, y: 71.2), control: CGPoint(x: 49, y: 74.2))
+        p.ctx.addQuadCurve(to: CGPoint(x: 57.2, y: 70.8), control: CGPoint(x: 55, y: 74.2))
+        p.ctx.setStrokeColor(ink.withAlphaComponent(0.7).cgColor); p.ctx.setLineWidth(1.3)
         p.ctx.setLineCap(.round); p.ctx.setLineJoin(.round); p.ctx.strokePath()
-        // Whiskers.
-        let whisker = hex(0x4A3428, 0.5)
+        // Whiskers, white like the glass edge.
         for (dy, endDy) in [(CGFloat(-2), CGFloat(-6)), (0.5, 0.5), (3, 7)] {
-            p.line(36, 69 + dy, 12, 69 + endDy, whisker, 1.1)
-            p.line(68, 69 + dy, 92, 69 + endDy, whisker, 1.1)
+            p.line(34, 68 + dy, 10, 68 + endDy, hex(0xFFFFFF, 0.9), 1.2)
+            p.line(70, 68 + dy, 94, 68 + endDy, hex(0xFFFFFF, 0.9), 1.2)
         }
     },
     // A pile of copied cards with a count badge.
