@@ -4,7 +4,7 @@
 //   swift tools/make-icon.swift <app> AppIcon.iconset
 //   iconutil -c icns AppIcon.iconset -o AppIcon.icns
 //
-// <app> is one of: window-pane-relief, desktop-cat, copy-collector, shelfie, paperlight, jot
+// <app> is one of: window-pane-relief, desktop-cat, copy-collector, shelfie, paperlight, jot, leftovers
 import AppKit
 
 let args = CommandLine.arguments
@@ -174,6 +174,27 @@ let designs: [String: Design] = [
             let y = CGFloat(34 + i * 9)
             p.line(32, y, 32 + CGFloat(len), y, ink, 2.6)
         }
+    },
+    // A takeout box with chopsticks.
+    "leftovers": Design(top: 0xFF9E8F, bottom: 0xD9383F) { p in
+        // Chopsticks behind the box, so the glass frosts over them.
+        p.line(56, 54, 84, 14, hex(0xFFE2B8), 3.2)
+        p.line(63, 56, 92, 20, hex(0xFFE2B8), 3.2)
+        // Wire handle.
+        p.ctx.move(to: CGPoint(x: 36, y: 38)); p.ctx.addQuadCurve(to: CGPoint(x: 68, y: 38), control: CGPoint(x: 52, y: 12))
+        p.ctx.setStrokeColor(hex(0xFFFFFF, 0.9).cgColor); p.ctx.setLineWidth(2); p.ctx.strokePath()
+        // Box: tapered body with a folded top band.
+        let body = CGMutablePath()
+        body.move(to: CGPoint(x: 24, y: 42)); body.addLine(to: CGPoint(x: 80, y: 42))
+        body.addLine(to: CGPoint(x: 72, y: 87)); body.addLine(to: CGPoint(x: 32, y: 87)); body.closeSubpath()
+        p.glass(body, fill: 0.55, edge: 0.95, width: 1.5)
+        let band = CGMutablePath()
+        band.move(to: CGPoint(x: 20, y: 34)); band.addLine(to: CGPoint(x: 84, y: 34))
+        band.addLine(to: CGPoint(x: 80, y: 46)); band.addLine(to: CGPoint(x: 24, y: 46)); band.closeSubpath()
+        p.glass(band, fill: 0.75, edge: 0.95, width: 1.5)
+        // A little red seal on the front.
+        p.ctx.addPath(p.circle(52, 65, 7.5)); p.ctx.setStrokeColor(hex(0xC9303A, 0.7).cgColor); p.ctx.setLineWidth(1.8); p.ctx.strokePath()
+        p.fill(p.circle(52, 65, 3), hex(0xC9303A, 0.7))
     },
     // A note with bullet points.
     "jot": Design(top: 0xFFC2E6, bottom: 0xD46BD8) { p in

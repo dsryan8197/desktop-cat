@@ -1,5 +1,7 @@
 # Desktop Cat
 
+<img src="images/icon.png" alt="Desktop Cat app icon" width="128">
+
 A free, offline pixel-art cat that lives on your Mac desktop. Two cats to choose from: a fluffy tan-and-white one and a chunky orange one.
 
 <img src="images/desktop-cat-demo.gif" alt="Desktop Cat: a pixel-art cat is carried by the scruff and dropped onto the top of a window, runs along it, bats and chases a yarn ball, then curls up to sleep and wakes again" width="720">
