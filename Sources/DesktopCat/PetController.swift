@@ -40,6 +40,8 @@ final class PetController {
     private var rideSpeeds: [(t: Double, vx: Double)] = []
     private var lastRideScan = 0.0
     private var lastRideMove = -10.0
+    /// The window the cat was just shaken off, skipped as a landing spot until it lands.
+    private var shakenOffWindow: Int?
     /// True while the window under the cat is being moved (no pouncing at the pointer dragging it).
     var ridingMovingWindow: Bool { surface != .floor && CACurrentMediaTime() - lastRideMove < 1.5 }
     /// The sprite's lean while riding a moving window (radians) and how fast it's swinging.
@@ -388,7 +390,8 @@ final class PetController {
         }
         if tossVelocity != 0 { brain.facingRight = tossVelocity > 0 }
         // Land on a window top passed on the way down (when allowed), else the floor.
-        if v > 0, let l = WindowGeometry.surface(below: before, catX: brain.x, catWidth: brain.spriteWidth, ledges: standableLedges),
+        let landable = standableLedges.filter { $0.windowID != shakenOffWindow }
+        if v > 0, let l = WindowGeometry.surface(below: before, catX: brain.x, catWidth: brain.spriteWidth, ledges: landable),
            l.y >= y {
             land(on: currentScreen(), ledge: l)
         } else if y <= floorY {
@@ -398,6 +401,7 @@ final class PetController {
 
     private func land(on screen: NSScreen, ledge: Ledge?) {
         fallVelocity = nil
+        shakenOffWindow = nil
         tossVelocity = 0
         engine.sustainLastFrame = false
         if let l = ledge {
@@ -470,7 +474,7 @@ final class PetController {
             brain.shiftTarget(by: dx)
             if dx != 0 || w.frame.maxY != old.maxY { lastRideMove = now }
             y += Double(w.frame.maxY - old.maxY)
-            if dx != 0 || w.frame.maxY != old.maxY { feelRide(dx: dx, now: now) } else { rideSpeeds = [] }
+            if dx != 0 || w.frame.maxY != old.maxY { feelRide(dx: dx, now: now) }
         }
         lastRideScan = now
         ridingFrame = w.frame
@@ -498,6 +502,7 @@ final class PetController {
         for (a, b) in zip(fast, fast.dropFirst()) where (a.vx > 0) != (b.vx > 0) { flips += 1 }
         if flips >= 3 {
             rideSpeeds = []
+            if case let .ledge(id) = surface { shakenOffWindow = id } // Don't land right back on it.
             tossVelocity = max(-450, min(450, vx * 0.3))
             brain.interrupt()
             startFall(vy: -250) // Flung up a little, then down.
