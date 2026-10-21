@@ -41,7 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
                 guard let next = queue.first else { timer.invalidate(); return }
                 switch next {
-                case "feed": pet.feed(.fish)
+                case "feed": pet.feed()
                 case "water": pet.fillWater()
                 case "yarn": pet.tossYarn()
                 default:

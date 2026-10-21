@@ -3,8 +3,6 @@ import AppKit
 /// Food, water and the yarn ball: puts the props on the floor, sends the cat on
 /// errands, and keeps hunger / thirst / fun up to date (saved with timestamps).
 final class CareController {
-    enum Food: String { case fish, kibble }
-
     private let settings: Settings
     private let brain: Brain
     private let catWindow: NSWindow
@@ -12,7 +10,7 @@ final class CareController {
     private(set) var props: PropSet
     private var scale: Double
 
-    private struct Bowl { let window: PropWindow; let kind: PropKind; let need: Need; let food: Food?; var fadeIn: Double? }
+    private struct Bowl { let window: PropWindow; let kind: PropKind; let need: Need; var fadeIn: Double? }
     private struct Ball { let window: PropWindow; var physics: YarnPhysics; var held = false; var finishing = false; var removeIn: Double? }
     private var bowl: Bowl?
     private var ball: Ball?
@@ -36,8 +34,8 @@ final class CareController {
 
     // MARK: - Menu commands
 
-    func feed(_ food: Food, floor: NSRect) { putBowl(.foodBowl, need: .hunger, food: food, floor: floor) }
-    func fillWater(floor: NSRect) { putBowl(.waterBowl, need: .thirst, food: nil, floor: floor) }
+    func feed(floor: NSRect) { putBowl(.foodBowl, need: .hunger, floor: floor) }
+    func fillWater(floor: NSRect) { putBowl(.waterBowl, need: .thirst, floor: floor) }
 
     func tossYarn(floor: NSRect) {
         guard canTossYarn, let image = props.images[.yarn], let start = props.placement(.yarn), let end = props.yarnEnd else { return }
@@ -52,12 +50,12 @@ final class CareController {
         brain.startYarn(YarnErrand(roundsLeft: Int.random(in: 3...5), placement: start, endPlacement: end))
     }
 
-    private func putBowl(_ kind: PropKind, need: Need, food: Food?, floor: NSRect) {
+    private func putBowl(_ kind: PropKind, need: Need, floor: NSRect) {
         guard canPutBowlDown, let image = props.images[kind], let placement = props.placement(kind) else { return }
         let width = Double(image.width) * scale
         let x = spot(width: width, floor: floor)
         let window = PropWindow(image: image, scale: scale)
-        bowl = Bowl(window: window, kind: kind, need: need, food: food, fadeIn: nil)
+        bowl = Bowl(window: window, kind: kind, need: need, fadeIn: nil)
         show(window, at: NSPoint(x: x, y: Double(floor.minY) + Double(placement.bottom) * scale))
         brain.startBowl(BowlErrand(need: need, propX: x, propWidth: width, placement: placement))
     }
@@ -103,7 +101,7 @@ final class CareController {
         case let .stoppedEating(need, finished):
             if let b = bowl { show(b.window, at: b.window.frame.origin) }
             guard finished else { return }
-            needs.satisfy(need, by: bowl?.food == .kibble ? 0.7 : 1.0, at: Date())
+            needs.satisfy(need, by: 1.0, at: Date())
             bowl?.fadeIn = 4
             save()
         case .pickedUpYarn:

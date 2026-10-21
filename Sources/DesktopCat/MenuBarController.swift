@@ -24,11 +24,11 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.removeAllItems()
 
         if let reason = pet.autoPauseReason, !pet.isPaused {
-            let note = NSMenuItem(title: "Resting during \(reason)", action: nil, keyEquivalent: "")
+            let note = NSMenuItem(title: "Sleeping during \(reason)", action: nil, keyEquivalent: "")
             note.isEnabled = false
             menu.addItem(note)
         }
-        menu.addItem(item(pet.isPaused ? "Resume" : "Pause", #selector(togglePause)))
+        menu.addItem(item(pet.isPaused ? "Wake Up" : "Go to Sleep", #selector(togglePause)))
         menu.addItem(item(pet.isHidden ? "Show Cat" : "Hide Cat", #selector(toggleHidden)))
         menu.addItem(item("Bring Cat to This Screen", #selector(bringHere)))
         menu.addItem(.separator())
@@ -81,16 +81,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         header.isEnabled = false
         menu.addItem(header)
 
-        let food = NSMenu()
-        food.autoenablesItems = false
-        for (title, value) in [("Fish", CareController.Food.fish), ("Kibble", .kibble)] {
-            let i = item(title, #selector(feed(_:)))
-            i.representedObject = value.rawValue
-            i.isEnabled = care.canPutBowlDown && care.hasArt(for: .foodBowl)
-            food.addItem(i)
-        }
-        let feedItem = submenu(care.hasArt(for: .foodBowl) ? "Feed" : "Feed  — no bowl art", food)
-        menu.addItem(feedItem)
+        let feed = item(care.hasArt(for: .foodBowl) ? "Feed" : "Feed  — no bowl art", #selector(feed))
+        feed.isEnabled = care.canPutBowlDown && care.hasArt(for: .foodBowl)
+        menu.addItem(feed)
 
         let water = item(care.hasArt(for: .waterBowl) ? "Fill Water" : "Fill Water  — no bowl art", #selector(fillWater))
         water.isEnabled = care.canPutBowlDown && care.hasArt(for: .waterBowl)
@@ -108,8 +101,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         ("Peek from Behind Windows", \.peekBehindWindows, false),
     ]
     private static let pauseOptions: [(String, ReferenceWritableKeyPath<Settings, Bool>)] = [
-        ("Rest During Full-Screen Apps", \.pauseInFullScreen),
-        ("Rest in Low Power Mode", \.pauseInLowPower),
+        ("Sleep During Full-Screen Apps", \.pauseInFullScreen),
+        ("Sleep in Low Power Mode", \.pauseInLowPower),
     ]
 
     /// Opt-in extras (off by default) and the considerate pauses.
@@ -171,9 +164,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     @objc private func toggleHidden() { pet.setHidden(!pet.isHidden) }
     @objc private func bringHere() { pet.bringToMouseScreen() }
     @objc private func chooseCat(_ sender: NSMenuItem) { pet.switchCat(to: sender.representedObject as? String ?? "") }
-    @objc private func feed(_ sender: NSMenuItem) {
+    @objc private func feed() {
         if pet.isPaused { pet.setPaused(false) }
-        pet.feed(CareController.Food(rawValue: sender.representedObject as? String ?? "") ?? .kibble)
+        pet.feed()
     }
     @objc private func fillWater() {
         if pet.isPaused { pet.setPaused(false) }

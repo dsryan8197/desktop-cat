@@ -87,7 +87,7 @@ final class PetController {
     /// The floor the cat (and its props) stand on.
     var floorRect: NSRect { currentScreen().visibleFrame }
 
-    func feed(_ food: CareController.Food) { care.feed(food, floor: floorRect) }
+    func feed() { care.feed(floor: floorRect) }
     func fillWater() { care.fillWater(floor: floorRect) }
     func tossYarn() { care.tossYarn(floor: floorRect) }
 
