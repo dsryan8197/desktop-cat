@@ -20,7 +20,7 @@ final class PetController {
     /// Downward speed while falling (nil = on the floor), and sideways speed from a toss.
     private(set) var fallVelocity: Double?
     /// Set while paused: whether the cat has settled into sleep yet (nil = not paused).
-    private var restState: (asleep: Bool, toldToSleep: Bool, elapsed: Double)?
+    private var restState: (asleep: Bool, toldToSleep: Bool, wentToSide: Bool, elapsed: Double)?
     private var tossVelocity: Double = 0
     private var gestures = CursorGestures()
     private var propSets: [String: PropSet] = [:]
@@ -268,13 +268,27 @@ final class PetController {
             return
         }
         if restState == nil {
-            restState = (asleep: false, toldToSleep: false, elapsed: 0)
+            restState = (asleep: false, toldToSleep: false, wentToSide: false, elapsed: 0)
             if extras.isActive { extras.abort(dropping: y > Double(currentScreen().visibleFrame.minY) + 1) }
         }
         guard var rest = restState, !rest.asleep else { return }
         if fallVelocity != nil { updateFall(dt) }
         engine.tick(dt)
         rest.elapsed += dt
+        // In the middle of the screen: trot off to a side first, then lie down there.
+        if fallVelocity == nil && !rest.wentToSide && !rest.toldToSleep {
+            rest.wentToSide = true
+            if surface == .floor, let side = brain.sideSpotForRest {
+                brain.interrupt()
+                extras.walk(to: side)
+            }
+        }
+        if extras.isActive {
+            extras.tick(dt)
+            restState = rest
+            render()
+            return
+        }
         if fallVelocity == nil {
             if ["sleep", "sleep_2"].contains(engine.currentID) {
                 rest.asleep = true
@@ -282,7 +296,7 @@ final class PetController {
                 rest.toldToSleep = brain.settleForRest()
             }
         }
-        if rest.elapsed > 10 { rest.asleep = true } // Never keep animating for long while resting.
+        if rest.elapsed > 30 { rest.asleep = true } // Never keep animating for long while resting.
         restState = rest
         placeWindow()
         render()

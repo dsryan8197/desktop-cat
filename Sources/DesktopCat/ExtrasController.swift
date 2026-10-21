@@ -319,6 +319,12 @@ final class ExtrasController {
              .play("idle_sit", seconds: 0.3)])
     }
 
+    /// Head somewhere on the floor (used to wander off to a side before resting).
+    func walk(to x: Double) {
+        let far = abs(x - brain.x) > catW * 2.5 // Trot rather than stroll when it's a way off.
+        run([.walk(toX: x, run: far)])
+    }
+
     /// The Talent Show: about half a minute of the cat's best tricks, for showing it off.
     func talentShow() {
         abort(dropping: false)

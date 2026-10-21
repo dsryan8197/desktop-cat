@@ -124,6 +124,20 @@ final class Sim {
         #expect(Double(sides.count) / Double(stops.count) > 0.65)
     }
 
+    @Test func goesToASideBeforeFallingAsleep() {
+        for seed in UInt64(1)...5 {
+            let sim = Sim(seed: seed)
+            sim.brain.x = 560 // Middle of the 0...1200 floor.
+            sim.brain.userIdleSeconds = 10_000 // You're away: it settles in for a nap.
+            var asleepAt: Double?
+            sim.run(seconds: 120) { _ in
+                if asleepAt == nil && sim.engine.currentID == "sleep" { asleepAt = sim.brain.x }
+            }
+            let x = try! #require(asleepAt)
+            #expect(x < 300 || x > 900, "seed \(seed): fell asleep at \(x)")
+        }
+    }
+
     @Test func holdsALookUpForAMoment() {
         let sim = Sim(seed: 8)
         sim.brain.tuning.weights = .init(idle: 0, walk: 0, groom: 0, rest: 0, look: 1)

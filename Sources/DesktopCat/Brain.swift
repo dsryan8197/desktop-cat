@@ -142,6 +142,8 @@ final class Brain {
     /// Seconds to hold the looking-up pose once the head is all the way up (0 = don't).
     private var gazeHold = 0.0
     private var glanceTimer = 20.0
+    /// Walking off to a side of the screen to curl up there.
+    private var sleepOnArrival = false
     private var napAfterYawn = false
     private var waking = false
     private var sleepThreshold: Double = 300
@@ -227,7 +229,7 @@ final class Brain {
         switch engine.currentID {
         case "walk", "run", "chase":
             moveTowardTarget(dt)
-            if userIdleSeconds >= sleepThreshold { targetX = nil; goToSleep(away: true) }
+            if userIdleSeconds >= sleepThreshold && !sleepOnArrival { targetX = nil; goToSleep(away: true) }
         case "idle_sit":
             if userIdleSeconds >= sleepThreshold { goToSleep(away: true); return }
             if lookAtCursorIfNear() { return }
@@ -348,6 +350,12 @@ final class Brain {
         case "yawn" where napAfterYawn:
             napAfterYawn = false
             napTimer = random(tuning.napSeconds)
+            // Not in the middle of the screen: wander off to a side first, then lie down there.
+            if let side = sideSpotForRest {
+                targetX = side
+                sleepOnArrival = true
+                return engine.request("walk")
+            }
             return engine.request("sleep") // Routed as lie_down → sleep.
         case "get_up" where waking:
             waking = false
@@ -442,6 +450,7 @@ final class Brain {
 
     /// Picked up mid-errand: put any bowl/ball back on screen; the errand resumes after landing.
     func interrupt() {
+        sleepOnArrival = false
         if eating, let b = bowl {
             eating = false
             signals.append(.stoppedEating(b.need, finished: false))
@@ -644,6 +653,15 @@ final class Brain {
         return k > 0.25 && k < 0.75
     }
 
+    /// Somewhere near the nearer side of the screen to curl up, or nil when it's already out of the way.
+    var sideSpotForRest: Double? {
+        guard inMiddle else { return nil }
+        let band = (floorRange.upperBound - floorRange.lowerBound) * 0.18
+        let mid = (floorRange.lowerBound + floorRange.upperBound) / 2
+        return x < mid ? floorRange.lowerBound + Double.random(in: 0...band, using: &rng)
+                       : floorRange.upperBound - Double.random(in: 0...band, using: &rng)
+    }
+
     /// Look up and hold it a moment.
     private func gazeUp() {
         if engine.request("look_up") { gazeHold = random(tuning.gazeSeconds) }
@@ -659,6 +677,11 @@ final class Brain {
             x = target
             targetX = nil
             if bowl != nil || yarn != nil { return } // The errand takes it from here.
+            if sleepOnArrival {
+                sleepOnArrival = false
+                engine.request("sleep") // Routed as lie_down → sleep.
+                return
+            }
             idleTimer = random(tuning.idleSeconds)
             engine.request("idle_sit")
         } else {
