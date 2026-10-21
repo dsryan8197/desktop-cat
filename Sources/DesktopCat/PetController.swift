@@ -20,7 +20,7 @@ final class PetController {
     /// Downward speed while falling (nil = on the floor), and sideways speed from a toss.
     private(set) var fallVelocity: Double?
     /// Set while paused: whether the cat has settled into sleep yet (nil = not paused).
-    private var restState: (asleep: Bool, elapsed: Double)?
+    private var restState: (asleep: Bool, toldToSleep: Bool, elapsed: Double)?
     private var tossVelocity: Double = 0
     private var gestures = CursorGestures()
     private var propSets: [String: PropSet] = [:]
@@ -202,7 +202,7 @@ final class PetController {
             return
         }
         if restState == nil {
-            restState = (asleep: false, elapsed: 0)
+            restState = (asleep: false, toldToSleep: false, elapsed: 0)
             if extras.isActive { extras.abort(dropping: y > Double(currentScreen().visibleFrame.minY) + 1) }
         }
         guard var rest = restState, !rest.asleep else { return }
@@ -212,8 +212,8 @@ final class PetController {
         if fallVelocity == nil {
             if ["sleep", "sleep_2"].contains(engine.currentID) {
                 rest.asleep = true
-            } else if !brain.isSettlingForRest {
-                brain.settleForRest()
+            } else if !rest.toldToSleep {
+                rest.toldToSleep = brain.settleForRest()
             }
         }
         if rest.elapsed > 10 { rest.asleep = true } // Never keep animating for long while resting.
@@ -337,6 +337,7 @@ final class PetController {
             return
         }
         isDragging = false
+        restState = nil // If paused, fall and settle back to sleep again.
         let screen = screenContaining(CGPoint(x: window.frame.midX, y: window.frame.midY))
             ?? screenContaining(NSEvent.mouseLocation) ?? NSScreen.main ?? NSScreen.screens[0]
         updateFloor(for: screen, width: window.frame.width)
