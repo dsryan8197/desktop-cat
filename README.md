@@ -4,7 +4,7 @@
 
 **A free, offline pixel-art cat that lives on your Mac desktop.**
 
-<img src="images/desktop-cat-demo.gif" alt="Desktop Cat: a pixel-art cat is carried by the scruff and dropped onto the top of a window, runs along it, bats and chases a yarn ball, then curls up to sleep and wakes again" width="720">
+<img src="images/desktop-cat-showcase.gif" alt="Desktop Cat: a pixel-art cat peeks over a window and hops on top, rides along as the window moves and is shaken off, chases the cursor, rolls over when tickled, is picked up by the scruff, bats a yarn ball, sits watching a movie, then lies down to sleep" width="720">
 
 ### [⬇️ Download Desktop Cat](https://github.com/hi-dad/desktop-cat/releases/latest/download/DesktopCat.dmg)
 Free · macOS 14 or newer · always the latest version
@@ -18,15 +18,15 @@ Everything is in the **cat icon** in your menu bar.
 
 ## What the cat does
 
-- Wanders along the bottom of your screen: walks, grooms, stretches and naps.
-- Watches your cursor, dozes when you're away, and waves when you're back.
+- Wanders along the bottom of your screen, mostly keeping to the sides: walks, grooms, stretches, naps, looks up at what you're doing and paws at the screen.
+- Sneaks behind your windows and hops up on top, rides along when you move them, and tumbles off if you shake one.
+- Play-bows and pounces at your pointer, sits and watches videos with you, and runs to catch up when you swipe to another desktop.
 - Pick it up and it dangles by the scruff. Wiggle the cursor to tickle it, or move slowly to pet it.
 - Feed it, fill its water bowl, or toss it a ball of yarn. Nothing bad ever happens if you forget.
-- Pounces at your pointer when it comes close, watches videos with you, and follows you when you swipe to another desktop. Optional extras: climb onto windows from behind (and ride along when you move them), hang off edges, bat at window edges, peek over the top, or chase your cursor.
-- **Talent Show** in the menu: half a minute of his best tricks, for showing him off.
-- Two cats to choose from, sizes 1×–6×, and Calm / Normal / Lively moods.
+- **Talent Show** in the menu: half a minute of its best tricks, for showing it off.
+- Two cats to choose from, sizes 1×–6×, Calm / Normal / Lively moods, and extras you can switch off.
 
-Clicks pass straight through everything but the cat. It rests during full-screen apps and Low Power Mode. No accounts, no network, no special permissions.
+Clicks pass straight through everything but the cat. It sleeps during full-screen apps and Low Power Mode. No accounts, no network, no special permissions.
 
 **Update:** download again and replace the app. **Remove:** cat icon → **Quit Desktop Cat**, then drag it to the Trash.
 
@@ -37,7 +37,7 @@ Needs Xcode or the Command Line Tools.
 ```bash
 ./build.sh run    # builds DesktopCat.app and starts it
 ./build.sh dist   # makes dist/DesktopCat.dmg
-swift test        # about 100 tests
+swift test        # about 105 tests
 ```
 
 Code is in `Sources/DesktopCat/`, behaviour and art rules in `specs/`, sprite tools in `tools/sprites/`.
