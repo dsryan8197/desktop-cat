@@ -19,6 +19,8 @@ final class PetController {
     private var dragSamples: [(t: Double, p: CGPoint)] = []
     /// Downward speed while falling (nil = on the floor), and sideways speed from a toss.
     private(set) var fallVelocity: Double?
+    /// Set while paused: whether the cat has settled into sleep yet (nil = not paused).
+    private var restState: (asleep: Bool, elapsed: Double)?
     private var tossVelocity: Double = 0
     private var gestures = CursorGestures()
     private var propSets: [String: PropSet] = [:]
@@ -165,7 +167,8 @@ final class PetController {
         updateMousePassThrough()
         scanIn -= dt
         if scanIn <= 0 { scanWindows() }
-        if settings.paused || autoPauseReason != nil { return }
+        if settings.paused || autoPauseReason != nil { windDown(dt); return }
+        restState = nil
         care.tick(dt, floor: floorRect)
         if isDragging {
             engine.tick(dt) // Keep dangling animated while carried.
@@ -186,6 +189,35 @@ final class PetController {
             extras.maybeChase(dt: dt)
             if !extras.isActive { brain.update(dt) }
         }
+        placeWindow()
+        render()
+    }
+
+    /// Paused (by you, Low Power Mode or a full-screen app): instead of freezing mid-action,
+    /// the cat drops off any window edge, lies down and falls asleep, then stops animating.
+    private func windDown(_ dt: Double) {
+        if isDragging {
+            engine.tick(dt)
+            render()
+            return
+        }
+        if restState == nil {
+            restState = (asleep: false, elapsed: 0)
+            if extras.isActive { extras.abort(dropping: y > Double(currentScreen().visibleFrame.minY) + 1) }
+        }
+        guard var rest = restState, !rest.asleep else { return }
+        if fallVelocity != nil { updateFall(dt) }
+        engine.tick(dt)
+        rest.elapsed += dt
+        if fallVelocity == nil {
+            if ["sleep", "sleep_2"].contains(engine.currentID) {
+                rest.asleep = true
+            } else if !brain.isSettlingForRest {
+                brain.settleForRest()
+            }
+        }
+        if rest.elapsed > 10 { rest.asleep = true } // Never keep animating for long while resting.
+        restState = rest
         placeWindow()
         render()
     }

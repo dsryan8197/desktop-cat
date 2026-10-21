@@ -182,6 +182,7 @@ final class Brain {
     }
 
     func update(_ dt: Double) {
+        isSettlingForRest = false
         x = clamp(x)
         lookTimer -= dt
         if lastUserIdle >= tuning.waveAfterAwaySeconds && userIdleSeconds < 1 { pendingWave = true }
@@ -483,6 +484,22 @@ final class Brain {
     }
 
     // MARK: - Sleeping
+
+    /// True from `settleForRest()` until the cat moves on from that nap.
+    private(set) var isSettlingForRest = false
+
+    /// The app is pausing: put down any errand and go to sleep; on resume it wakes soon after.
+    func settleForRest() {
+        interrupt()
+        targetX = nil
+        afterHappy = nil
+        isBeingPetted = false
+        sleepingBecauseAway = false
+        waking = false
+        napAfterYawn = false
+        napTimer = 3
+        isSettlingForRest = engine.request("sleep") // Routed as lie_down → sleep.
+    }
 
     private func goToSleep(away: Bool) {
         sleepingBecauseAway = away

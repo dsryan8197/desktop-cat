@@ -65,6 +65,19 @@ final class Sim {
         #expect(sim.engine.currentID != "sleep")
     }
 
+    @Test func pausingLiesDownToSleepThenWakesSoonAfterResume() {
+        let sim = Sim(seed: 7)
+        sim.run(seconds: 30) // Whatever it's doing.
+        sim.brain.settleForRest()
+        var t = 0.0
+        while !["sleep", "sleep_2"].contains(sim.engine.currentID) && t < 10 { sim.engine.tick(1.0 / 30); t += 1.0 / 30 }
+        let asleep = ["sleep", "sleep_2"].contains(sim.engine.currentID)
+        #expect(asleep)
+        sim.seen = []
+        sim.run(seconds: 10) // Resumed.
+        #expect(sim.seen.contains("get_up"))
+    }
+
     @Test func looksAtCursorAtMostEvery20Seconds() {
         let sim = Sim(seed: 5)
         sim.brain.tuning.weights = .init(idle: 1, walk: 0, groom: 0, rest: 0, look: 0)

@@ -5,7 +5,7 @@ import ServiceManagement
 /// so checkmarks always match the current settings.
 final class MenuBarController: NSObject, NSMenuDelegate {
     private let pet: PetController
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let menu = NSMenu()
 
     /// Friendlier names for the menu (manifest names stay the source of truth for IDs).
@@ -14,10 +14,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     init(pet: PetController) {
         self.pet = pet
         super.init()
-        if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "cat.fill", accessibilityDescription: "Desktop Cat")
-            button.image?.isTemplate = true
-        }
+        statusItem.button?.image = MenuBarIcon.image
         menu.delegate = self
         menu.autoenablesItems = false // We decide which items are greyed out.
         statusItem.menu = menu
