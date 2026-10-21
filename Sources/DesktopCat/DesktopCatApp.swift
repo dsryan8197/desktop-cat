@@ -45,6 +45,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case "water": pet.fillWater()
                 case "yarn": pet.tossYarn()
                 case "talent": pet.startTalentShow()
+                case "nap": // Lies down and naps for a while (once it's sitting, after landing).
+                    guard pet.engine.currentID == "idle_sit" else { return }
+                    pet.brain.tuning.explicitSeconds = 30
+                    pet.brain.playExplicit("sleep")
                 default:
                     guard !pet.extras.isActive, pet.fallVelocity == nil else { return }
                     if !pet.extras.start(plan: next) { NSLog("DesktopCat demo: %@ not possible here", next) }
