@@ -94,7 +94,9 @@ final class ExtrasController {
         let mouse = NSEvent.mouseLocation
         let centerX = brain.x + catW / 2
         let dx = Double(mouse.x) - centerX
+        // Not while you're holding the mouse button (dragging a window, selecting text).
         let near = pet.settings.pounceAtCursor && motionAllowed && !isActive &&
+            NSEvent.pressedMouseButtons == 0 && !pet.ridingMovingWindow &&
             brain.bowl == nil && brain.yarn == nil &&
             ["idle_sit", "walk", "blink", "look_up", "look_down", "sit_back"].contains(engine.currentID) &&
             !pet.window.frame.contains(mouse) &&
@@ -118,6 +120,7 @@ final class ExtrasController {
         if hypot(mouse.x - lastMouse.x, mouse.y - lastMouse.y) > 2 { lastMouseMoved = clock }
         lastMouse = mouse
         guard pet.settings.chaseCursor, motionAllowed, !isActive, chaseCooldown <= 0,
+              NSEvent.pressedMouseButtons == 0, !pet.ridingMovingWindow,
               brain.bowl == nil, brain.yarn == nil,
               ["idle_sit", "walk", "run", "blink", "look_up", "look_down", "sit_back"].contains(engine.currentID),
               clock - lastMouseMoved < 0.3,

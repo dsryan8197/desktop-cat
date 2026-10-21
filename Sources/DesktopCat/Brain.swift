@@ -154,6 +154,11 @@ final class Brain {
     /// Opt-in extras get a turn when the cat decides what to do. Returns true if one started.
     var exploreHook: (() -> Bool)?
 
+    /// The surface under the cat moved sideways: keep heading for the same spot on it.
+    func shiftTarget(by dx: Double) {
+        if let t = targetX { targetX = t + dx }
+    }
+
     /// An extra is driving the cat; forget any walk target.
     func pauseForExtras() {
         targetX = nil

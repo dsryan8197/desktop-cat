@@ -39,6 +39,9 @@ final class PetController {
     /// Recent sideways speeds of the window being ridden, to spot a shake.
     private var rideSpeeds: [(t: Double, vx: Double)] = []
     private var lastRideScan = 0.0
+    private var lastRideMove = -10.0
+    /// True while the window under the cat is being moved (no pouncing at the pointer dragging it).
+    var ridingMovingWindow: Bool { surface != .floor && CACurrentMediaTime() - lastRideMove < 1.5 }
     /// The sprite's lean while riding a moving window (radians) and how fast it's swinging.
     private var lean = 0.0, leanSpeed = 0.0
     private var scanIn = 0.0
@@ -440,12 +443,19 @@ final class PetController {
 
     /// Standing on a window: ride along when it moves; fall if it closes, hides or gets covered.
     private func followLedge() {
-        guard case let .ledge(id) = surface, fallVelocity == nil, !isDragging, !extras.isActive else { return }
+        guard case let .ledge(id) = surface, fallVelocity == nil, !isDragging else { return }
+        if extras.isActive {
+            // Mid-move (a pounce, a hang): carry on unless the window moves, then hold on and ride.
+            guard let old = ridingFrame, let w = windows.first(where: { $0.id == id }), w.frame.origin != old.origin else { return }
+            extras.abort(dropping: false)
+        }
         guard canStandOnWindows, let w = windows.first(where: { $0.id == id }) else { startFall(vy: 0); return }
         let now = CACurrentMediaTime()
         if let old = ridingFrame {
             let dx = Double(w.frame.minX - old.minX)
             brain.x += dx
+            brain.shiftTarget(by: dx)
+            if dx != 0 || w.frame.maxY != old.maxY { lastRideMove = now }
             y += Double(w.frame.maxY - old.maxY)
             if dx != 0 || w.frame.maxY != old.maxY { feelRide(dx: dx, now: now) } else { rideSpeeds = [] }
         }
@@ -470,10 +480,10 @@ final class PetController {
         // Speeding up tips the cat backwards (a gentle push on the lean spring).
         leanSpeed += max(-8, min(8, -(vx - previous) / 300))
         // A shake: the window whips back and forth quickly a few times.
-        let fast = rideSpeeds.filter { abs($0.vx) > 500 }
+        let fast = rideSpeeds.filter { abs($0.vx) > 900 }
         var flips = 0
         for (a, b) in zip(fast, fast.dropFirst()) where (a.vx > 0) != (b.vx > 0) { flips += 1 }
-        if flips >= 2 {
+        if flips >= 3 {
             rideSpeeds = []
             tossVelocity = max(-450, min(450, vx * 0.3))
             brain.interrupt()
