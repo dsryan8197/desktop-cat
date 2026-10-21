@@ -89,6 +89,55 @@ final class Sim {
         #expect(sim.seen.filter { $0 == "look_up" }.count == 2)
     }
 
+    @Test func pawsAtTheScreenTwoOrThreeTimes() {
+        for seed in UInt64(1)...10 {
+            let sim = Sim(seed: seed)
+            sim.brain.tuning.weights = .init(idle: 0, walk: 0, groom: 0, rest: 0, look: 0, paw: 1)
+            sim.brain.tuning.blinkEvery = 1000...1000
+            sim.brain.tuning.idleSeconds = 1...1
+            sim.brain.resetToIdle()
+            var paws = 0
+            var burstOver = false
+            sim.run(seconds: 10) { _ in
+                guard !burstOver else { return }
+                if sim.engine.currentID == "beg" && sim.engine.player.elapsed == 0 { paws += 1 }
+                if paws > 0 && sim.engine.currentID == "idle_sit" { burstOver = true }
+            }
+            #expect(burstOver)
+            #expect((2...3).contains(paws), "seed \(seed): pawed \(paws) times")
+        }
+    }
+
+    @Test func idleWalksMostlyEndNearTheSides() {
+        let sim = Sim(seed: 3)
+        sim.brain.tuning.weights = .init(idle: 0, walk: 1, groom: 0, rest: 0, look: 0)
+        sim.brain.tuning.chanceRun = 0
+        var stops: [Double] = []
+        var last = sim.engine.currentID
+        sim.run(seconds: 1200) { _ in
+            if last == "walk" && sim.engine.currentID == "idle_sit" { stops.append(sim.brain.x) }
+            last = sim.engine.currentID
+        }
+        let r = sim.brain.floorRange, span = r.upperBound - r.lowerBound
+        let sides = stops.filter { abs($0 - r.lowerBound) < span * 0.25 || abs($0 - r.upperBound) < span * 0.25 }
+        #expect(stops.count > 20)
+        #expect(Double(sides.count) / Double(stops.count) > 0.65)
+    }
+
+    @Test func holdsALookUpForAMoment() {
+        let sim = Sim(seed: 8)
+        sim.brain.tuning.weights = .init(idle: 0, walk: 0, groom: 0, rest: 0, look: 1)
+        sim.brain.tuning.blinkEvery = 1000...1000
+        sim.brain.tuning.idleSeconds = 1...1
+        sim.brain.resetToIdle()
+        var longest = 0.0, t = 0.0
+        sim.run(seconds: 60) { _ in
+            t = sim.engine.currentID == "look_up" ? t + 1.0 / 30 : 0
+            longest = max(longest, t)
+        }
+        #expect(longest > 2.5) // Plain look_up is 1.6 s; the gaze holds the head-up frame.
+    }
+
     @Test func groomingRepeatsTwoToFourTimes() {
         for seed in UInt64(1)...20 {
             let sim = Sim(seed: seed)

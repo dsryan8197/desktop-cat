@@ -11,14 +11,14 @@ enum Energy: String, CaseIterable {
         switch self {
         case .calm:
             t.idleSeconds = 12...25
-            t.weights = .init(idle: 50, walk: 15, groom: 12, rest: 15, look: 8)
+            t.weights = .init(idle: 50, walk: 15, groom: 12, rest: 15, look: 14, paw: 4)
             t.chanceRun = 0
             t.chanceNapAfterYawn = 0.5
         case .normal:
             break
         case .lively:
             t.idleSeconds = 5...12
-            t.weights = .init(idle: 30, walk: 40, groom: 10, rest: 5, look: 15)
+            t.weights = .init(idle: 30, walk: 40, groom: 10, rest: 5, look: 20, paw: 9)
             t.chanceRun = 0.3
             t.chanceNapAfterYawn = 0.15
         }
@@ -29,15 +29,17 @@ enum Energy: String, CaseIterable {
 /// Every number that shapes behaviour, in one place. Defaults follow specs/BEHAVIOR_RULES.md.
 struct BrainTuning {
     struct Weights {
-        var idle = 45.0, walk = 25.0, groom = 10.0, rest = 10.0, look = 10.0
+        var idle = 45.0, walk = 25.0, groom = 10.0, rest = 10.0, look = 16.0
+        /// Standing up on its hind legs and pawing at the screen (the beg frames).
+        var paw = 6.0
         /// Only counts while a need is low: begging, looking sad or bored.
         var needs = 25.0
         /// Only counts while an opt-in extra (windows) is switched on.
         var explore = 20.0
         init() {}
-        init(idle: Double, walk: Double, groom: Double, rest: Double, look: Double, needs: Double = 25) {
+        init(idle: Double, walk: Double, groom: Double, rest: Double, look: Double, paw: Double = 0, needs: Double = 25) {
             self.idle = idle; self.walk = walk; self.groom = groom; self.rest = rest; self.look = look
-            self.needs = needs
+            self.paw = paw; self.needs = needs
         }
     }
 
@@ -58,6 +60,11 @@ struct BrainTuning {
     /// Looking at the cursor: how close it must be (sprite pixels) and the minimum gap between looks.
     var lookDistance = 80.0
     var lookCooldown = 20.0
+    /// While you're working, the cat glances up at what you're doing about this often (and holds it a moment).
+    var glanceEvery: ClosedRange<Double> = 15...35
+    var gazeSeconds: ClosedRange<Double> = 1.5...4
+    /// Standing up to paw at the screen: how many times in a row.
+    var pawRepeats: ClosedRange<Int> = 2...3
     /// Sprite pixels per second (multiplied by scale for screen points).
     var walkSpeed = 15.0
     var runSpeed = 45.0
@@ -131,6 +138,10 @@ final class Brain {
     private var wakeTimer: Double?
     private var lookTimer: Double = 0
     private var groomLeft = 0
+    private var pawLeft = 0
+    /// Seconds to hold the looking-up pose once the head is all the way up (0 = don't).
+    private var gazeHold = 0.0
+    private var glanceTimer = 20.0
     private var napAfterYawn = false
     private var waking = false
     private var sleepThreshold: Double = 300
@@ -192,6 +203,10 @@ final class Brain {
 
     func update(_ dt: Double) {
         x = clamp(x)
+        // Hold the head-up frame of a look up for a moment, as if watching what you're doing.
+        if gazeHold > 0 {
+            if engine.currentID != "look_up" { gazeHold = 0 } else if engine.frameIndex >= 2 { engine.freeze(for: gazeHold); gazeHold = 0 }
+        }
         lookTimer -= dt
         if lastUserIdle >= tuning.waveAfterAwaySeconds && userIdleSeconds < 1 { pendingWave = true }
         lastUserIdle = userIdleSeconds
@@ -216,6 +231,11 @@ final class Brain {
         case "idle_sit":
             if userIdleSeconds >= sleepThreshold { goToSleep(away: true); return }
             if lookAtCursorIfNear() { return }
+            glanceTimer -= dt
+            if glanceTimer <= 0 {
+                glanceTimer = random(tuning.glanceEvery)
+                if userIdleSeconds < 4 && lookTimer <= 0 { gazeUp(); return } // Only while you're at it.
+            }
             blinkTimer -= dt
             idleTimer -= dt
             if idleTimer <= 0 { decide() } else if blinkTimer <= 0 {
@@ -259,11 +279,14 @@ final class Brain {
     // MARK: - Choosing
 
     private func decide() {
-        idleTimer = random(tuning.idleSeconds)
+        // Mid-screen it's in the way, so the next decision comes sooner.
+        idleTimer = random(tuning.idleSeconds) * (inMiddle ? 0.5 : 1)
         let w = tuning.weights
+        // Sitting around mid-screen is in the way: from there, wander off more often.
+        let walkWeight = inMiddle ? w.walk * 2.5 : w.walk
         let choices: [(Double, () -> Void)] = [
-            (w.idle, {}),
-            (w.walk, { [self] in
+            (inMiddle ? w.idle * 0.4 : w.idle, {}),
+            (walkWeight, { [self] in
                 pickTarget(minDistance: 60 * scale / 3)
                 engine.request(chance(tuning.chanceRun) ? "run" : "walk")
             }),
@@ -280,13 +303,18 @@ final class Brain {
                 }
             }),
             (w.look, { [self] in
-                switch Int.random(in: 0..<3, using: &rng) {
-                case 0: engine.request("look_up")
-                case 1: engine.request("look_down")
+                switch Int.random(in: 0..<10, using: &rng) {
+                case 0..<6: gazeUp() // Looking up at what you're doing: the favourite.
+                case 6, 7: engine.request("look_down")
                 default:
                     actionTimer = random(tuning.sitBackSeconds)
                     engine.request("sit_back")
                 }
+            }),
+            (w.paw, { [self] in
+                // Up on its hind legs, pawing at the screen a few times.
+                pawLeft = Int.random(in: tuning.pawRepeats, using: &rng) - 1
+                engine.request("beg")
             }),
             (exploreHook == nil ? 0 : w.explore, { [self] in _ = exploreHook?() }),
             (lowNeeds.isEmpty ? 0 : w.needs, { [self] in
@@ -311,6 +339,9 @@ final class Brain {
     /// The engine calls this when a once/hold action ends. Returns true if we chose what's next.
     private func finished(_ id: String) -> Bool {
         switch id {
+        case "beg" where pawLeft > 0:
+            pawLeft -= 1
+            return engine.request("beg")
         case "groom" where groomLeft > 0:
             groomLeft -= 1
             return engine.request("groom")
@@ -588,12 +619,34 @@ final class Brain {
     private func pickTarget(minDistance: Double) {
         let span = floorRange.upperBound - floorRange.lowerBound
         guard span > minDistance else { targetX = floorRange.lowerBound; return }
+        // On a wide floor, usually head for one of the sides, out of the way; now and then anywhere.
+        let preferSides = span > spriteWidth * 6 && chance(0.75)
+        let band = span * 0.22
         var t = x
         for _ in 0..<10 {
-            t = Double.random(in: floorRange, using: &rng)
+            if preferSides {
+                let left = chance(0.5)
+                t = left ? floorRange.lowerBound + Double.random(in: 0...band, using: &rng)
+                         : floorRange.upperBound - Double.random(in: 0...band, using: &rng)
+            } else {
+                t = Double.random(in: floorRange, using: &rng)
+            }
             if abs(t - x) >= minDistance { break }
         }
         targetX = t
+    }
+
+    /// In the middle half of a wide floor, where sitting still gets in the way.
+    private var inMiddle: Bool {
+        let span = floorRange.upperBound - floorRange.lowerBound
+        guard span > spriteWidth * 6 else { return false }
+        let k = (x - floorRange.lowerBound) / span
+        return k > 0.25 && k < 0.75
+    }
+
+    /// Look up and hold it a moment.
+    private func gazeUp() {
+        if engine.request("look_up") { gazeHold = random(tuning.gazeSeconds) }
     }
 
     private func moveTowardTarget(_ dt: Double) {

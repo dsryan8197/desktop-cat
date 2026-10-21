@@ -62,6 +62,9 @@ final class AnimationEngine {
     /// Stop on the current frame for a moment (a crouch before a pounce or jump).
     func freeze(for seconds: Double) { frozenFor = seconds }
 
+    /// Which frame of the current action is showing (0-based).
+    var frameIndex: Int { player.frameIndex }
+
     func tick(_ dt: Double) {
         if frozenFor > 0 {
             frozenFor -= dt
