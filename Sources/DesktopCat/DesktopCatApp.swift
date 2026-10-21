@@ -44,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case "feed": pet.feed()
                 case "water": pet.fillWater()
                 case "yarn": pet.tossYarn()
+                case "talent": pet.startTalentShow()
                 default:
                     guard !pet.extras.isActive, pet.fallVelocity == nil else { return }
                     if !pet.extras.start(plan: next) { NSLog("DesktopCat demo: %@ not possible here", next) }

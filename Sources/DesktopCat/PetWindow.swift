@@ -1,7 +1,8 @@
 import AppKit
 
 /// Borderless, transparent, always-on-top panel exactly the size of one sprite
-/// frame. It never takes focus, shows on every Space, and lets clicks through
+/// frame. It never takes focus, follows you to whichever Space you switch to (running
+/// in from the side, see PetController.spaceChanged), and lets clicks through
 /// except on the cat's visible pixels (see PetController.updateMousePassThrough).
 final class PetWindow: NSPanel {
     let spriteView = SpriteView()
@@ -14,7 +15,9 @@ final class PetWindow: NSPanel {
         backgroundColor = .clear
         hasShadow = false
         level = .floating
-        collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        // Not on every Space at once: it stays behind on the old desktop as you swipe away,
+        // then is moved to the new one and dashes in.
+        collectionBehavior = [.moveToActiveSpace, .stationary, .ignoresCycle]
         isMovable = false // We move it ourselves; macOS must not drag it.
         hidesOnDeactivate = false
         ignoresMouseEvents = true

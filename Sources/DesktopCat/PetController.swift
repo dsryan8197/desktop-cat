@@ -48,6 +48,8 @@ final class PetController {
     private var lean = 0.0, leanSpeed = 0.0
     private var scanIn = 0.0
     private var videoCheckIn = 1.0
+    private var talentShowPending = false
+    private var spaceIndex: Int?
     private(set) var fullScreenActive = false
     private(set) var reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
 
@@ -80,6 +82,10 @@ final class PetController {
         window.spriteView.onMouseDragged = { [weak self] e in self?.mouseDragged(e) }
         window.spriteView.onMouseUp = { [weak self] _ in self?.mouseUp() }
 
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.spaceChanged()
+        }
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification,
                                                object: nil, queue: .main) { [weak self] _ in self?.screensChanged() }
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
@@ -105,6 +111,7 @@ final class PetController {
     func tossYarn() { care.tossYarn(floor: floorRect) }
 
     func start() {
+        spaceIndex = SpaceTracker.index(onDisplay: currentScreen())
         applySize()
         restorePosition()
         render()
@@ -147,9 +154,45 @@ final class PetController {
         render()
     }
 
-    func play(_ actionID: String) {
-        guard !isDragging, fallVelocity == nil else { return }
-        brain.playExplicit(actionID)
+    /// The Talent Show (from the menu): starts once the cat is on the floor.
+    func startTalentShow() {
+        if settings.paused { setPaused(false) }
+        if settings.hidden { setHidden(false) }
+        if surface != .floor || extras.isActive { extras.abort(dropping: surface != .floor) }
+        talentShowPending = true
+    }
+
+    // MARK: - Desktops (Spaces)
+
+    /// You switched desktops. The cat stayed behind on the old one, so bring it over and have it
+    /// run in from the side it came from (swiping to the desktop on the right: from the left).
+    private func spaceChanged() {
+        let screen = currentScreen()
+        let index = SpaceTracker.index(onDisplay: screen)
+        defer { spaceIndex = index }
+        guard !settings.hidden else { return }
+        // A full-screen app is a Space of its own; the cat rests there anyway.
+        guard !settings.paused, autoPauseReason == nil, !isDragging, !reduceMotion else {
+            window.orderFrontRegardless()
+            return
+        }
+        let fromLeft: Bool
+        if let new = index, let old = spaceIndex, new != old {
+            fromLeft = new > old
+        } else {
+            fromLeft = window.frame.midX < screen.frame.midX
+        }
+        fallVelocity = nil
+        tossVelocity = 0
+        surface = .floor
+        ridingFrame = nil
+        engine.sustainLastFrame = false
+        brain.interrupt()
+        updateFloor(for: screen, width: window.frame.width)
+        extras.catchUp(fromLeft: fromLeft)
+        placeWindowExactly()
+        render()
+        window.orderFrontRegardless() // Joins the desktop you're on now.
     }
 
     /// Move the cat to the floor of the display the mouse is on.
@@ -196,6 +239,12 @@ final class PetController {
         engine.tick(dt)
         if extras.isActive {
             extras.tick(dt)
+            render()
+            return
+        }
+        if fallVelocity == nil && talentShowPending {
+            talentShowPending = false
+            extras.talentShow()
             render()
             return
         }

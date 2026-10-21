@@ -31,6 +31,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(item(pet.isPaused ? "Wake Up" : "Go to Sleep", #selector(togglePause)))
         menu.addItem(item(pet.isHidden ? "Show Cat" : "Hide Cat", #selector(toggleHidden)))
         menu.addItem(item("Bring Cat to This Screen", #selector(bringHere)))
+        menu.addItem(item("Talent Show", #selector(talentShow)))
         menu.addItem(.separator())
         addCareItems()
         menu.addItem(.separator())
@@ -63,7 +64,6 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
         menu.addItem(submenu("Energy", energies))
         menu.addItem(submenu("Extras", extrasMenu()))
-        menu.addItem(submenu("Play Action", actionsMenu()))
         menu.addItem(.separator())
 
         let login = item("Launch at Login", #selector(toggleLaunchAtLogin))
@@ -134,32 +134,6 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         return sub
     }
 
-    /// Every manifest action grouped by category, labelled honestly with its art status.
-    private func actionsMenu() -> NSMenu {
-        let root = NSMenu()
-        let library = pet.engine.library
-        var categories: [String] = []
-        for a in pet.manifest.actions where !categories.contains(a.category) { categories.append(a.category) }
-        for category in categories {
-            let sub = NSMenu()
-            for a in pet.manifest.actions where a.category == category {
-                guard let resolved = library.action(a.id) else { continue }
-                var title = a.label
-                if let source = resolved.borrowedFrom {
-                    title += "  — reuses \(source)"
-                } else if !resolved.hasRealArt {
-                    title += "  — no art yet"
-                }
-                let i = item(title, #selector(playAction(_:)))
-                i.representedObject = a.id
-                i.state = a.id == pet.engine.currentID ? .on : .off
-                sub.addItem(i)
-            }
-            root.addItem(submenu(category.capitalized, sub))
-        }
-        return root
-    }
-
     // MARK: - Actions
 
     @objc private func togglePause() { pet.setPaused(!pet.isPaused) }
@@ -190,10 +164,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         pet.setEnergy(Energy(rawValue: sender.representedObject as? String ?? "") ?? .normal)
     }
     @objc private func chooseScale(_ sender: NSMenuItem) { pet.setScale(sender.tag) }
-    @objc private func playAction(_ sender: NSMenuItem) {
-        if pet.isPaused { pet.setPaused(false) }
-        pet.play(sender.representedObject as? String ?? "")
-    }
+    @objc private func talentShow() { pet.startTalentShow() }
     @objc private func quit() { NSApp.terminate(nil) }
 
     @objc private func toggleLaunchAtLogin() {
