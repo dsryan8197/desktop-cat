@@ -21,7 +21,7 @@ final class ExtrasController {
         case emergeAbove(y: Double)        // come out from behind once the feet clear this height
         case drop
         case chase
-        case stalk(seconds: Double)        // crouched low, creeping, eyes on the pointer
+        case stalk(seconds: Double)        // a play bow (front down, rear up), eyes on the pointer
         case pounceAtAim                   // leap in an arc to where the stalk aimed
     }
 
@@ -36,6 +36,7 @@ final class ExtrasController {
     private var hidden = false
     private var emergeY: Double?
     private var pounceAim = 0.0
+    private var bowHeld = false
 
     // Cursor chase bookkeeping
     private var lastMouse = CGPoint.zero
@@ -110,7 +111,7 @@ final class ExtrasController {
         cursorNearFor = 0
         pounceDir = dx > 0 ? 1 : -1
         brain.facingRight = pounceDir > 0
-        run([.stalk(seconds: Double.random(in: 1.2...2.2)), .pounceAtAim, .play("idle_sit", seconds: 0.6)])
+        run([.stalk(seconds: Double.random(in: 1.2...1.7)), .pounceAtAim, .play("idle_sit", seconds: 0.6)])
     }
 
     /// Chasing starts on its own when the pointer is moving near the cat's level.
@@ -326,8 +327,8 @@ final class ExtrasController {
         case .chase:
             engine.request("chase", force: true) // chase reuses run's frames
         case .stalk:
-            engine.request("pounce", force: true) // Hold the low crouch (its first frame) the whole time.
-            engine.freeze(for: 60)
+            engine.request("stretch", force: true) // Its opening is a play bow; we hold the second frame.
+            bowHeld = false
         case .pounceAtAim:
             // Aim at where the pointer is now, but no farther than a good leap.
             let mouseX = Double(NSEvent.mouseLocation.x) - catW / 2
@@ -390,9 +391,10 @@ final class ExtrasController {
                 return true
             }
             brain.facingRight = dx > 0
-            // Creep closer, low and slow, then hold perfectly still for a moment before the leap.
-            if t < seconds - 0.7 && abs(dx) > catW * 1.0 {
-                brain.x = clampToSurface(brain.x + (dx > 0 ? 1 : -1) * 7 * scale * dt)
+            // Bow down into the stretch's first frames, then hold the bow (rear up) until it's time.
+            if t >= FrameTiming.secondsPerFrame("stretch") * 1.1 && !bowHeld {
+                bowHeld = true
+                engine.freeze(for: 60)
             }
             return t >= seconds
         case .pounceAtAim:
@@ -425,7 +427,7 @@ final class ExtrasController {
                 // Close and low: crouch, pounce. Then keep chasing.
                 pounceDir = Double(mouse.x) >= brain.x + catW / 2 ? 1 : -1
                 brain.facingRight = pounceDir > 0
-                steps = [.stalk(seconds: Double.random(in: 0.7...1.2)), .pounceAtAim, .chase]
+                steps = [.stalk(seconds: Double.random(in: 0.8...1.1)), .pounceAtAim, .chase]
             } else {
                 // Out of reach above: just look up at it.
                 steps = [.play("look_up", seconds: 1.5)]
