@@ -44,8 +44,6 @@ final class PetController {
     var ridingMovingWindow: Bool { surface != .floor && CACurrentMediaTime() - lastRideMove < 1.5 }
     /// The sprite's lean while riding a moving window (radians) and how fast it's swinging.
     private var lean = 0.0, leanSpeed = 0.0
-    /// Extra rocking set by a move (the butt wiggle before a pounce), in radians.
-    var wiggle = 0.0
     private var scanIn = 0.0
     private var videoCheckIn = 1.0
     private(set) var fullScreenActive = false
@@ -291,7 +289,7 @@ final class PetController {
     }
 
     private func render() {
-        window.spriteView.show(engine.frame, facingRight: brain.facingRight, lean: lean + wiggle)
+        window.spriteView.show(engine.frame, facingRight: brain.facingRight, lean: lean)
     }
 
     // MARK: - Click-through

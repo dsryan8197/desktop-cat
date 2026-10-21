@@ -21,7 +21,7 @@ final class ExtrasController {
         case emergeAbove(y: Double)        // come out from behind once the feet clear this height
         case drop
         case chase
-        case stalk(seconds: Double)        // crouched low, creeping and wiggling, eyes on the pointer
+        case stalk(seconds: Double)        // crouched low, creeping, eyes on the pointer
         case pounceAtAim                   // leap in an arc to where the stalk aimed
     }
 
@@ -385,23 +385,16 @@ final class ExtrasController {
             let dx = Double(mouse.x) - (brain.x + catW / 2)
             // Lost it (moved far away or up out of reach): stand back up.
             if abs(dx) > catW * 3.2 || Double(mouse.y) > pet.y + catH * 1.6 || NSEvent.pressedMouseButtons != 0 {
-                pet.wiggle = 0
                 if case .pounceAtAim = steps.first { steps.removeFirst() }
                 if steps.isEmpty { steps = [.play("idle_sit", seconds: 0.4)] }
                 return true
             }
             brain.facingRight = dx > 0
-            // Creep closer, low and slow, then hold still and wiggle faster and faster before the leap.
-            let wiggleFrom = seconds - 0.7
-            if t < wiggleFrom && abs(dx) > catW * 1.0 {
+            // Creep closer, low and slow, then hold perfectly still for a moment before the leap.
+            if t < seconds - 0.7 && abs(dx) > catW * 1.0 {
                 brain.x = clampToSurface(brain.x + (dx > 0 ? 1 : -1) * 7 * scale * dt)
             }
-            if t >= wiggleFrom {
-                let k = (t - wiggleFrom) / 0.7
-                pet.wiggle = 0.045 * sin((t - wiggleFrom) * 2 * .pi * (4 + 4 * k))
-            }
-            if t >= seconds { pet.wiggle = 0; return true }
-            return false
+            return t >= seconds
         case .pounceAtAim:
             // Frame 1 (crouch) shows briefly, frames 2-4 are the leap: move in an arc during those.
             let airStart = 0.06 + FrameTiming.secondsPerFrame("pounce"), air = 3 * FrameTiming.secondsPerFrame("pounce")
@@ -429,7 +422,7 @@ final class ExtrasController {
         let target = clampToSurface(Double(mouse.x) - catW / 2)
         if abs(target - brain.x) < catW * 0.35 {
             if Double(mouse.y) < pet.y + catH * 1.5 {
-                // Close and low: crouch, wiggle, pounce. Then keep chasing.
+                // Close and low: crouch, pounce. Then keep chasing.
                 pounceDir = Double(mouse.x) >= brain.x + catW / 2 ? 1 : -1
                 brain.facingRight = pounceDir > 0
                 steps = [.stalk(seconds: Double.random(in: 0.7...1.2)), .pounceAtAim, .chase]
@@ -456,7 +449,6 @@ final class ExtrasController {
     private func finish() {
         current = nil
         emergeY = nil
-        pet.wiggle = 0
         involvedWindow = nil
         leap = nil
         engine.sustainLastFrame = false
@@ -477,7 +469,6 @@ final class ExtrasController {
         steps = []
         current = nil
         emergeY = nil
-        pet.wiggle = 0
         involvedWindow = nil
         leap = nil
         engine.sustainLastFrame = false
