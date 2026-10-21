@@ -97,6 +97,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private static let extraOptions: [(String, ReferenceWritableKeyPath<Settings, Bool>, Bool)] = [
         ("Chase My Cursor", \.chaseCursor, true),
         ("Pounce at My Cursor", \.pounceAtCursor, true),
+        ("Watch Videos with Me", \.watchVideos, false),
         ("Climb onto Windows", \.jumpOnWindows, true),
         ("Hang off Window Edges", \.hangOffEdges, true),
         ("Peek from Behind Windows", \.peekBehindWindows, false),

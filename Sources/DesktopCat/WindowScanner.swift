@@ -17,7 +17,8 @@ enum WindowScanner {
                   let boundsDict = info[kCGWindowBounds as String] as? NSDictionary,
                   let cg = CGRect(dictionaryRepresentation: boundsDict as CFDictionary),
                   cg.width >= 120, cg.height >= 80 else { continue }
-            result.append(WindowRect(id: id, frame: WindowGeometry.cocoaRect(fromCG: cg, mainScreenHeight: mainHeight)))
+            result.append(WindowRect(id: id, frame: WindowGeometry.cocoaRect(fromCG: cg, mainScreenHeight: mainHeight),
+                                     pid: info[kCGWindowOwnerPID as String] as? Int ?? 0))
         }
         return result
     }

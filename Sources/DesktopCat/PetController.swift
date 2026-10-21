@@ -44,7 +44,10 @@ final class PetController {
     var ridingMovingWindow: Bool { surface != .floor && CACurrentMediaTime() - lastRideMove < 1.5 }
     /// The sprite's lean while riding a moving window (radians) and how fast it's swinging.
     private var lean = 0.0, leanSpeed = 0.0
+    /// Extra rocking set by a move (the butt wiggle before a pounce), in radians.
+    var wiggle = 0.0
     private var scanIn = 0.0
+    private var videoCheckIn = 1.0
     private(set) var fullScreenActive = false
     private(set) var reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
 
@@ -177,6 +180,8 @@ final class PetController {
         updateMousePassThrough()
         scanIn -= dt
         if scanIn <= 0 { scanWindows() }
+        videoCheckIn -= dt
+        if videoCheckIn <= 0 { checkForVideo() }
         if settings.paused || autoPauseReason != nil { windDown(dt); return }
         restState = nil
         updateLean(dt)
@@ -286,7 +291,7 @@ final class PetController {
     }
 
     private func render() {
-        window.spriteView.show(engine.frame, facingRight: brain.facingRight, lean: lean)
+        window.spriteView.show(engine.frame, facingRight: brain.facingRight, lean: lean + wiggle)
     }
 
     // MARK: - Click-through
@@ -423,6 +428,16 @@ final class PetController {
     var surfaceY: Double {
         if case let .ledge(id) = surface, let l = ledge(id) { return l.y }
         return Double(currentScreen().visibleFrame.minY)
+    }
+
+    /// Every couple of seconds: is a video playing on this screen? Then the cat goes and watches it.
+    private func checkForVideo() {
+        videoCheckIn = 2
+        guard settings.watchVideos else { brain.watchX = nil; return }
+        let screen = currentScreen().frame
+        let video = VideoWatcher.videoWindow(in: windows.isEmpty ? WindowScanner.scan() : windows)
+            .flatMap { screen.intersects($0.frame) ? $0.frame : nil }
+        brain.watchX = video.map { Double($0.midX) - brain.spriteWidth / 2 }
     }
 
     private func scanWindows() {

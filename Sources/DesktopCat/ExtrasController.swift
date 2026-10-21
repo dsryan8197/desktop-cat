@@ -21,7 +21,8 @@ final class ExtrasController {
         case emergeAbove(y: Double)        // come out from behind once the feet clear this height
         case drop
         case chase
-        case pounce(toX: Double?)
+        case stalk(seconds: Double)        // crouched low, creeping and wiggling, eyes on the pointer
+        case pounceAtAim                   // leap in an arc to where the stalk aimed
     }
 
     private var steps: [Step] = []
@@ -34,7 +35,7 @@ final class ExtrasController {
     private var involvedWindow: Int?
     private var hidden = false
     private var emergeY: Double?
-    private var pounceSpeed = 0.0
+    private var pounceAim = 0.0
 
     // Cursor chase bookkeeping
     private var lastMouse = CGPoint.zero
@@ -109,7 +110,7 @@ final class ExtrasController {
         cursorNearFor = 0
         pounceDir = dx > 0 ? 1 : -1
         brain.facingRight = pounceDir > 0
-        run([.pounce(toX: clampToSurface(Double(mouse.x) - catW / 2)), .play("idle_sit", seconds: 0.8)])
+        run([.stalk(seconds: Double.random(in: 1.2...2.2)), .pounceAtAim, .play("idle_sit", seconds: 0.6)])
     }
 
     /// Chasing starts on its own when the pointer is moving near the cat's level.
@@ -161,8 +162,10 @@ final class ExtrasController {
             let range = top.catRange(catWidth: catW)
             let landing = min(max(x + (Bool.random() ? 1 : -1) * catW * 0.3, range.lowerBound), range.upperBound)
             involvedWindow = w.id
+            // Out of sight, climbing a taller window takes longer.
+            let climbTime = min(4, (Double(f.maxY) - floorY) / (90 * scale))
             return [.walk(toX: sideX, run: false), .hideBehind(windowID: w.id), .walk(toX: x, run: false),
-                    .place(x: x, y: hiddenY), .start("peek"), .slide(toY: Double(f.maxY) - scale, seconds: 0.4),
+                    .wait(climbTime), .place(x: x, y: hiddenY), .start("peek"), .slide(toY: Double(f.maxY) - scale, seconds: 0.4),
                     .wait(Double.random(in: 1.5...3)), .slide(toY: hiddenY, seconds: 0.25), .wait(0.3),
                     .emergeAbove(y: top.y), .leap(toX: landing, toY: top.y, onto: .ledge(windowID: w.id))]
         }
@@ -322,11 +325,18 @@ final class ExtrasController {
             pet.startFall(vy: 0)
         case .chase:
             engine.request("chase", force: true) // chase reuses run's frames
-        case let .pounce(toX):
-            engine.request("pounce", force: true) // First frame is the crouch.
-            engine.freeze(for: Double.random(in: 0.3...0.6))
-            // Aimed pounces cover the distance to the target during the leap itself.
-            pounceSpeed = toX.map { max(70 * scale, abs($0 - brain.x) / 0.45) } ?? 70 * scale
+        case .stalk:
+            engine.request("pounce", force: true) // Hold the low crouch (its first frame) the whole time.
+            engine.freeze(for: 60)
+        case .pounceAtAim:
+            // Aim at where the pointer is now, but no farther than a good leap.
+            let mouseX = Double(NSEvent.mouseLocation.x) - catW / 2
+            let reach = catW * 2.5
+            pounceAim = clampToSurface(min(max(mouseX, brain.x - reach), brain.x + reach))
+            pounceDir = pounceAim >= brain.x ? 1 : -1
+            brain.facingRight = pounceDir > 0
+            engine.request("pounce", force: true)
+            engine.freeze(for: 0.06)
         }
     }
 
@@ -370,12 +380,38 @@ final class ExtrasController {
             return true
         case .chase:
             return updateChase(dt)
-        case let .pounce(toX):
-            if t > 0.3 && engine.currentID == "pounce" {
-                let next = brain.x + pounceDir * pounceSpeed * dt
-                brain.x = clampToSurface(toX.map { pounceDir > 0 ? min(next, $0) : max(next, $0) } ?? next)
+        case let .stalk(seconds):
+            let mouse = NSEvent.mouseLocation
+            let dx = Double(mouse.x) - (brain.x + catW / 2)
+            // Lost it (moved far away or up out of reach): stand back up.
+            if abs(dx) > catW * 3.2 || Double(mouse.y) > pet.y + catH * 1.6 || NSEvent.pressedMouseButtons != 0 {
+                pet.wiggle = 0
+                if case .pounceAtAim = steps.first { steps.removeFirst() }
+                if steps.isEmpty { steps = [.play("idle_sit", seconds: 0.4)] }
+                return true
             }
-            return engine.currentID != "pounce" && engine.currentID != "land"
+            brain.facingRight = dx > 0
+            // Creep closer, low and slow, then hold still and wiggle faster and faster before the leap.
+            let wiggleFrom = seconds - 0.7
+            if t < wiggleFrom && abs(dx) > catW * 1.0 {
+                brain.x = clampToSurface(brain.x + (dx > 0 ? 1 : -1) * 7 * scale * dt)
+            }
+            if t >= wiggleFrom {
+                let k = (t - wiggleFrom) / 0.7
+                pet.wiggle = 0.045 * sin((t - wiggleFrom) * 2 * .pi * (4 + 4 * k))
+            }
+            if t >= seconds { pet.wiggle = 0; return true }
+            return false
+        case .pounceAtAim:
+            // Frame 1 (crouch) shows briefly, frames 2-4 are the leap: move in an arc during those.
+            let airStart = 0.06 + FrameTiming.secondsPerFrame("pounce"), air = 3 * FrameTiming.secondsPerFrame("pounce")
+            let k = min(1, max(0, (t - airStart) / air))
+            if engine.currentID == "pounce" || k < 1 {
+                brain.x = from.x + (pounceAim - from.x) * k
+                pet.y = from.y + catH * 0.22 * 4 * k * (1 - k)
+            }
+            if k >= 1 { pet.y = from.y }
+            return k >= 1 && engine.currentID != "pounce" && engine.currentID != "land"
         }
     }
 
@@ -396,7 +432,7 @@ final class ExtrasController {
                 // Close and low: crouch, wiggle, pounce. Then keep chasing.
                 pounceDir = Double(mouse.x) >= brain.x + catW / 2 ? 1 : -1
                 brain.facingRight = pounceDir > 0
-                steps = [.pounce(toX: nil), .chase]
+                steps = [.stalk(seconds: Double.random(in: 0.7...1.2)), .pounceAtAim, .chase]
             } else {
                 // Out of reach above: just look up at it.
                 steps = [.play("look_up", seconds: 1.5)]
@@ -420,6 +456,7 @@ final class ExtrasController {
     private func finish() {
         current = nil
         emergeY = nil
+        pet.wiggle = 0
         involvedWindow = nil
         leap = nil
         engine.sustainLastFrame = false
@@ -440,6 +477,7 @@ final class ExtrasController {
         steps = []
         current = nil
         emergeY = nil
+        pet.wiggle = 0
         involvedWindow = nil
         leap = nil
         engine.sustainLastFrame = false

@@ -154,6 +154,10 @@ final class Brain {
     /// Opt-in extras get a turn when the cat decides what to do. Returns true if one started.
     var exploreHook: (() -> Bool)?
 
+    /// Where to sit to watch a playing video (the cat's left edge), nil when nothing is playing.
+    var watchX: Double?
+    private(set) var watching = false
+
     /// The surface under the cat moved sideways: keep heading for the same spot on it.
     func shiftTarget(by dx: Double) {
         if let t = targetX { targetX = t + dx }
@@ -197,6 +201,13 @@ final class Brain {
         }
 
         if ["idle_sit", "walk", "run", "chase"].contains(engine.currentID), runErrand(dt) { return }
+        if let wx = watchX, bowl == nil, yarn == nil {
+            if watchVideo(at: wx, dt) { return }
+        } else if watching {
+            watching = false
+            if engine.currentID == "sit_back" { engine.request("idle_sit") }
+            idleTimer = random(tuning.idleSeconds)
+        }
 
         switch engine.currentID {
         case "walk", "run", "chase":
@@ -485,6 +496,29 @@ final class Brain {
         yarn = last ? nil : y
         idleTimer = random(tuning.idleSeconds)
         return last ? engine.request("happy") : false
+    }
+
+    // MARK: - Watching a video
+
+    /// Walk over below the video and sit with its back to you, watching, for as long as it plays.
+    private func watchVideo(at wx: Double, _ dt: Double) -> Bool {
+        let id = engine.currentID
+        if watching {
+            if id == "sit_back" { return true }
+            watching = false // Something else happened (petted, a blink): settle back in after.
+        }
+        guard ["idle_sit", "walk", "run", "blink", "look_up", "look_down"].contains(id) else { return false }
+        let target = clamp(wx)
+        if abs(x - target) <= 2 {
+            x = target
+            targetX = nil
+            watching = true
+            engine.request("sit_back")
+        } else {
+            targetX = target
+            if id == "walk" || id == "run" { moveTowardTarget(dt) } else { engine.request("walk") }
+        }
+        return true
     }
 
     // MARK: - Sleeping

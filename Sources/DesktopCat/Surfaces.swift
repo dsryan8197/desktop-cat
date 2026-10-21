@@ -5,6 +5,7 @@ import Foundation
 struct WindowRect: Equatable {
     let id: Int
     let frame: CGRect
+    var pid: Int = 0
 }
 
 /// A stretch of a window's top edge the cat can stand on.
