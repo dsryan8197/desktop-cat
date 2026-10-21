@@ -1,7 +1,7 @@
 import AppKit
 
-/// The opt-in extras: jumping onto windows, climbing up a window's side, hanging off
-/// an edge, peeking from behind a window, and chasing the cursor. Each one is a short
+/// The extras: climbing onto windows (from behind them), hanging off an edge, peeking
+/// from behind a window, chasing the cursor and pouncing at it. Each one is a short
 /// script of steps; while a script runs it drives the cat, then hands back to the Brain.
 final class ExtrasController {
     unowned let pet: PetController
@@ -18,9 +18,10 @@ final class ExtrasController {
         case slide(toY: Double, seconds: Double)
         case hideBehind(windowID: Int)
         case comeForward
+        case emergeAbove(y: Double)        // come out from behind once the feet clear this height
         case drop
         case chase
-        case pounce
+        case pounce(toX: Double?)
     }
 
     private var steps: [Step] = []
@@ -32,6 +33,8 @@ final class ExtrasController {
     /// The window the cat is hiding behind or climbing, if any (abort if it goes away).
     private var involvedWindow: Int?
     private var hidden = false
+    private var emergeY: Double?
+    private var pounceSpeed = 0.0
 
     // Cursor chase bookkeeping
     private var lastMouse = CGPoint.zero
@@ -39,6 +42,8 @@ final class ExtrasController {
     private var clock = 0.0
     private var chaseCooldown = 0.0
     private var chaseStarted = 0.0
+    private var pounceCooldown = 3.0
+    private var cursorNearFor = 0.0
 
     static let gravity = 2600.0
 
@@ -56,8 +61,17 @@ final class ExtrasController {
     // MARK: - Choosing an adventure (called from the Brain when it decides what to do)
 
     func tryStart() -> Bool {
+        let onLedge = pet.surface != .floor
         var plans: [() -> [Step]?] = []
-        if pet.settings.jumpOnWindows && motionAllowed { plans += [planJump, planClimb] }
+        if pet.settings.jumpOnWindows && motionAllowed {
+            if onLedge {
+                if pet.readyToLeaveLedge { plans.append { self.planGetDown() } }
+            } else {
+                // Up on a window is the favourite spot: usually head for one when there is one.
+                if Double.random(in: 0..<1) < 0.75, let s = planClimbUp() { run(s); return true }
+                plans.append(planClimbUp)
+            }
+        }
         if pet.settings.hangOffEdges && motionAllowed { plans.append(planHang) }
         if pet.settings.peekBehindWindows { plans.append(planPeek) }
         for plan in plans.shuffled() {
@@ -66,12 +80,34 @@ final class ExtrasController {
         return false
     }
 
-    /// Testing aid: start one named extra right now ("jump", "climb", "hang", "peek").
+    /// Testing aid: start one named extra right now ("climb", "down", "back", "hang", "peek").
     func start(plan name: String) -> Bool {
-        let plans: [String: () -> [Step]?] = ["jump": planJump, "climb": planClimb, "hang": planHang, "peek": planPeek]
+        let plans: [String: () -> [Step]?] = ["climb": planClimbUp, "down": { self.planGetDown() }, "back": { self.planGetDown(back: true) }, "hang": planHang, "peek": planPeek]
         guard !isActive, let plan = plans[name], let s = plan() else { return false }
         run(s)
         return true
+    }
+
+    /// Pounces at the pointer when it lingers close by at the cat's level.
+    func maybePounce(dt: Double) {
+        pounceCooldown -= dt
+        let mouse = NSEvent.mouseLocation
+        let centerX = brain.x + catW / 2
+        let dx = Double(mouse.x) - centerX
+        let near = pet.settings.pounceAtCursor && motionAllowed && !isActive &&
+            brain.bowl == nil && brain.yarn == nil &&
+            ["idle_sit", "walk", "blink", "look_up", "look_down", "sit_back"].contains(engine.currentID) &&
+            !pet.window.frame.contains(mouse) &&
+            abs(dx) > catW * 0.45 && abs(dx) < catW * 2.2 &&
+            Double(mouse.y) > pet.y - catH * 0.2 && Double(mouse.y) < pet.y + catH * 1.1
+        cursorNearFor = near ? cursorNearFor + dt : 0
+        // Watch it for a moment first (it's stalking), then go for it.
+        guard near, pounceCooldown <= 0, cursorNearFor > 0.6 else { return }
+        pounceCooldown = Double.random(in: 6...14)
+        cursorNearFor = 0
+        pounceDir = dx > 0 ? 1 : -1
+        brain.facingRight = pounceDir > 0
+        run([.pounce(toX: clampToSurface(Double(mouse.x) - catW / 2)), .play("idle_sit", seconds: 0.8)])
     }
 
     /// Chasing starts on its own when the pointer is moving near the cat's level.
@@ -104,21 +140,48 @@ final class ExtrasController {
     private var screen: CGRect { pet.currentScreen().visibleFrame }
     private var maxJump: Double { catH * 1.6 }
 
-    private func planJump() -> [Step]? {
-        let here = pet.surface
-        // Up onto a nearby higher ledge.
-        let ups = pet.ledges.filter {
-            .ledge(windowID: $0.windowID) != here && $0.y - surfaceY >= catH * 0.3 && $0.y - surfaceY <= maxJump
+    /// Up onto a window from behind it: slip round the side and behind it, peek over the top,
+    /// duck back down, then spring up from behind and land on top.
+    private func planClimbUp() -> [Step]? {
+        guard pet.surface == .floor else { return nil }
+        let floorY = Double(screen.minY)
+        for w in pet.windows.shuffled() {
+            let f = w.frame
+            // Its bottom must be near the floor, so the cat is out of sight while it's behind.
+            guard Double(f.minY) <= floorY + catH * 0.5, Double(f.maxY) - floorY >= catH * 1.3 else { continue }
+            guard let top = pet.ledges.filter({ $0.windowID == w.id && $0.width >= catW * 1.4 }).randomElement(),
+                  let sideX = sideOutside(f) else { continue }
+            let lo = max(top.minX, Double(f.minX)) + catW * 0.2, hi = min(top.maxX, Double(f.maxX)) - catW * 1.2
+            guard lo <= hi else { continue }
+            let x = Double.random(in: lo...hi)
+            let hiddenY = Double(f.maxY) - frameH * scale - 2 * scale
+            let range = top.catRange(catWidth: catW)
+            let landing = min(max(x + (Bool.random() ? 1 : -1) * catW * 0.3, range.lowerBound), range.upperBound)
+            involvedWindow = w.id
+            return [.walk(toX: sideX, run: false), .hideBehind(windowID: w.id), .walk(toX: x, run: false),
+                    .place(x: x, y: hiddenY), .start("peek"), .slide(toY: Double(f.maxY) - scale, seconds: 0.4),
+                    .wait(Double.random(in: 1.5...3)), .slide(toY: hiddenY, seconds: 0.25), .wait(0.3),
+                    .emergeAbove(y: top.y), .leap(toX: landing, toY: top.y, onto: .ledge(windowID: w.id))]
         }
-        if let l = ups.randomElement() {
+        return nil
+    }
+
+    /// Down from a window: hop off one end, or now and then hop down the back and stroll out from behind.
+    private func planGetDown(back: Bool? = nil) -> [Step]? {
+        guard case let .ledge(id) = pet.surface, let l = pet.ledge(id) else { return nil }
+        let floorY = Double(screen.minY)
+        if back ?? (Double.random(in: 0..<1) < 0.4), let f = pet.windows.first(where: { $0.id == id })?.frame,
+           Double(f.minY) <= floorY + catH * 0.5, let outX = sideOutside(f) {
             let range = l.catRange(catWidth: catW)
-            let landing = min(max(brain.x, range.lowerBound + catW * 0.2), range.upperBound - catW * 0.2)
-            let dir: Double = landing >= brain.x ? 1 : -1
-            let takeoff = clampToSurface(landing - dir * 50 * scale / 3)
-            return [.walk(toX: takeoff, run: false), .leap(toX: landing, toY: l.y, onto: .ledge(windowID: l.windowID))]
+            let lo = max(range.lowerBound, Double(f.minX)), hi = min(range.upperBound, Double(f.maxX) - catW)
+            if lo <= hi {
+                let x = min(max(brain.x, lo), hi)
+                involvedWindow = id
+                return [.hideBehind(windowID: id), .leap(toX: x, toY: floorY, onto: .floor),
+                        .walk(toX: outX, run: false), .comeForward]
+            }
         }
-        // Down off the end of the ledge we're on.
-        guard case let .ledge(id) = here, let l = pet.ledge(id) else { return nil }
+        // Off the end of the ledge, onto a lower window or the floor.
         let right = Bool.random()
         let range = l.catRange(catWidth: catW)
         let edge = right ? range.upperBound : range.lowerBound
@@ -126,37 +189,18 @@ final class ExtrasController {
         guard landingX >= Double(screen.minX), landingX + catW <= Double(screen.maxX) else { return nil }
         let below = pet.standableLedges.filter { $0.y < l.y - 1 && $0.supports(catX: landingX, catWidth: catW) }.max { $0.y < $1.y }
         return [.walk(toX: edge, run: false), .face(right: right),
-                .leap(toX: landingX, toY: below?.y ?? Double(screen.minY), onto: below.map { .ledge(windowID: $0.windowID) } ?? .floor)]
+                .leap(toX: landingX, toY: below?.y ?? floorY, onto: below.map { .ledge(windowID: $0.windowID) } ?? .floor)]
     }
 
-    private func planClimb() -> [Step]? {
-        guard pet.surface == .floor else { return nil }
-        let floorY = Double(screen.minY)
-        let climbFrame = engine.library.action("climb")?.frames.first
-        let b = climbFrame?.opaqueBounds ?? (minX: 10, minY: 10, maxX: 38, maxY: 47)
-        for w in pet.windows.shuffled() {
-            let f = w.frame
-            guard Double(f.minY) <= floorY + catH * 0.4, Double(f.maxY) - floorY > maxJump,
-                  Double(f.maxY) + catH <= Double(screen.maxY) else { continue }
-            let tops = pet.ledges.filter { $0.windowID == w.id }
-            // Climb the left side (facing right) or the right side (facing left), where the top is reachable.
-            var sides: [Bool] = []
-            if tops.contains(where: { $0.minX <= Double(f.minX) + 2 }) && Double(f.minX) - catW >= Double(screen.minX) { sides.append(true) }
-            if tops.contains(where: { $0.maxX >= Double(f.maxX) - 2 }) && Double(f.maxX) + catW <= Double(screen.maxX) { sides.append(false) }
-            guard let facingRight = sides.randomElement(),
-                  let top = tops.first(where: { facingRight ? $0.minX <= Double(f.minX) + 2 : $0.maxX >= Double(f.maxX) - 2 }) else { continue }
-            // Paws just touch the window's side (the sprite is mirrored when facing left).
-            let w = Double(engine.library.frameWidth)
-            let climbX = facingRight ? Double(f.minX) + scale - Double(b.maxX + 1) * scale
-                                     : Double(f.maxX) - scale - (w - 1 - Double(b.maxX)) * scale
-            // Climb until the top of the sprite reaches the window's top edge.
-            let toY = Double(f.maxY) - (frameH - Double(b.minY)) * scale
-            let range = top.catRange(catWidth: catW)
-            let landing = facingRight ? range.lowerBound + catW * 0.2 : range.upperBound - catW * 0.2
-            return [.walk(toX: clampToSurface(climbX), run: false), .face(right: facingRight),
-                    .climb(toY: toY), .leap(toX: landing, toY: top.y, onto: .ledge(windowID: top.windowID))]
-        }
-        return nil
+    /// Where the cat can stand just beside a window (the nearer side that fits on screen).
+    private func sideOutside(_ f: CGRect) -> Double? {
+        let left = Double(f.minX) - catW - 2, right = Double(f.maxX) + 2
+        let floor = ScreenMath.floorRange(visibleFrame: screen, catWidth: catW) // The real floor, even from up on a window.
+        let fitsLeft = left >= floor.lowerBound, fitsRight = right <= floor.upperBound
+        let centre = brain.x + catW / 2
+        let preferLeft = centre - Double(f.minX) < Double(f.maxX) - centre
+        if fitsLeft && (preferLeft || !fitsRight) { return left }
+        return fitsRight ? right : nil
     }
 
     private func planHang() -> [Step]? {
@@ -171,7 +215,7 @@ final class ExtrasController {
         guard hangY > Double(screen.minY) else { return nil }
         var s: [Step] = [.walk(toX: right ? range.upperBound : range.lowerBound, run: false), .face(right: right),
                          .place(x: center - catW / 2, y: hangY), .play("hang_edge", seconds: Double.random(in: 3...6))]
-        if Bool.random() {
+        if !pet.readyToLeaveLedge || Bool.random() {
             s.append(.leap(toX: right ? range.upperBound - catW * 0.3 : range.lowerBound + catW * 0.3, toY: l.y, onto: .ledge(windowID: id)))
         } else {
             s.append(.drop)
@@ -218,6 +262,7 @@ final class ExtrasController {
         guard let step = current else { return }
         t += dt
         if update(step, dt) { next() }
+        if let e = emergeY, hidden, pet.y > e + 1 { emergeY = nil; restoreLevel() }
         pet.placeWindowExactly()
     }
 
@@ -268,13 +313,17 @@ final class ExtrasController {
             hidden = true
         case .comeForward:
             restoreLevel()
+        case let .emergeAbove(y):
+            emergeY = y
         case .drop:
             pet.startFall(vy: 0)
         case .chase:
             engine.request("chase", force: true) // chase reuses run's frames
-        case .pounce:
+        case let .pounce(toX):
             engine.request("pounce", force: true) // First frame is the crouch.
             engine.freeze(for: Double.random(in: 0.3...0.6))
+            // Aimed pounces cover the distance to the target during the leap itself.
+            pounceSpeed = toX.map { max(70 * scale, abs($0 - brain.x) / 0.45) } ?? 70 * scale
         }
     }
 
@@ -284,7 +333,7 @@ final class ExtrasController {
         case let .walk(toX, run):
             let speed = (run ? brain.tuning.runSpeed : brain.tuning.walkSpeed) * scale
             return move(toward: toX, speed: speed, dt: dt)
-        case .face, .place, .start, .hideBehind, .comeForward:
+        case .face, .place, .start, .hideBehind, .comeForward, .emergeAbove:
             return true
         case let .leap(toX, toY, onto):
             guard let l = leap else { return true }
@@ -318,9 +367,10 @@ final class ExtrasController {
             return true
         case .chase:
             return updateChase(dt)
-        case .pounce:
+        case let .pounce(toX):
             if t > 0.3 && engine.currentID == "pounce" {
-                brain.x = clampToSurface(brain.x + pounceDir * 70 * scale * dt)
+                let next = brain.x + pounceDir * pounceSpeed * dt
+                brain.x = clampToSurface(toX.map { pounceDir > 0 ? min(next, $0) : max(next, $0) } ?? next)
             }
             return engine.currentID != "pounce" && engine.currentID != "land"
         }
@@ -343,7 +393,7 @@ final class ExtrasController {
                 // Close and low: crouch, wiggle, pounce. Then keep chasing.
                 pounceDir = Double(mouse.x) >= brain.x + catW / 2 ? 1 : -1
                 brain.facingRight = pounceDir > 0
-                steps = [.pounce, .chase]
+                steps = [.pounce(toX: nil), .chase]
             } else {
                 // Out of reach above: just look up at it.
                 steps = [.play("look_up", seconds: 1.5)]
@@ -366,6 +416,7 @@ final class ExtrasController {
 
     private func finish() {
         current = nil
+        emergeY = nil
         involvedWindow = nil
         leap = nil
         engine.sustainLastFrame = false
@@ -385,6 +436,7 @@ final class ExtrasController {
         guard isActive else { return }
         steps = []
         current = nil
+        emergeY = nil
         involvedWindow = nil
         leap = nil
         engine.sustainLastFrame = false

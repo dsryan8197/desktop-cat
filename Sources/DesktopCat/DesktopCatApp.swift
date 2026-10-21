@@ -35,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Testing aid: `open DesktopCat.app --args -demo feed|water|yarn` runs a care action
         // a moment after launch. Launch arguments aren't saved, so normal launches ignore it.
-        // Extras can be chained: `-demo jump,hang` (turn the extra on too, e.g. `-jumpOnWindows YES`).
+        // Extras can be chained: `-demo climb,hang,down` (turn the extra on too, e.g. `-jumpOnWindows YES`).
         if let demo = UserDefaults.standard.string(forKey: "demo") {
             var queue = demo.split(separator: ",").map(String.init)
             Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in

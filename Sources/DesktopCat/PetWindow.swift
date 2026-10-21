@@ -66,7 +66,8 @@ final class SpriteView: NSView {
     override func mouseDragged(with event: NSEvent) { onMouseDragged?(event) }
     override func mouseUp(with event: NSEvent) { onMouseUp?(event) }
 
-    func show(_ frame: SpriteFrame, facingRight: Bool) {
+    /// `lean` tilts the cat around its feet (radians), e.g. while riding a moving window.
+    func show(_ frame: SpriteFrame, facingRight: Bool, lean: Double = 0) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         defer { CATransaction.commit() }
@@ -76,9 +77,11 @@ final class SpriteView: NSView {
             imageLayer.isHidden = false
             placeholderBox.isHidden = true
             placeholderText.isHidden = true
+            imageLayer.setAffineTransform(.identity)
+            imageLayer.anchorPoint = CGPoint(x: 0.5, y: 0)
             imageLayer.frame = b
             imageLayer.contents = image
-            imageLayer.setAffineTransform(facingRight ? .identity : CGAffineTransform(scaleX: -1, y: 1))
+            imageLayer.setAffineTransform(CGAffineTransform(rotationAngle: lean).scaledBy(x: facingRight ? 1 : -1, y: 1))
         } else {
             imageLayer.isHidden = true
             placeholderBox.isHidden = false

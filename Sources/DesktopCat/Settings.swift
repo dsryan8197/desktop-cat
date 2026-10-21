@@ -41,6 +41,8 @@ final class Settings {
     var jumpOnWindows: Bool { get { defaults.bool(forKey: "jumpOnWindows") } set { defaults.set(newValue, forKey: "jumpOnWindows") } }
     var hangOffEdges: Bool { get { defaults.bool(forKey: "hangOffEdges") } set { defaults.set(newValue, forKey: "hangOffEdges") } }
     var peekBehindWindows: Bool { get { defaults.bool(forKey: "peekBehindWindows") } set { defaults.set(newValue, forKey: "peekBehindWindows") } }
+    /// On unless you turn it off: pounce at the pointer when it comes close.
+    var pounceAtCursor: Bool { get { bool("pounceAtCursor", default: true) } set { defaults.set(newValue, forKey: "pounceAtCursor") } }
 
     // Being considerate (on unless you turn them off).
     var pauseInFullScreen: Bool { get { bool("pauseInFullScreen", default: true) } set { defaults.set(newValue, forKey: "pauseInFullScreen") } }

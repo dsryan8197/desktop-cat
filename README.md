@@ -22,7 +22,7 @@ Everything is in the **cat icon** in your menu bar.
 - Watches your cursor, dozes when you're away, and waves when you're back.
 - Pick it up and it dangles by the scruff. Wiggle the cursor to tickle it, or move slowly to pet it.
 - Feed it, fill its water bowl, or toss it a ball of yarn. Nothing bad ever happens if you forget.
-- Optional extras: chase your cursor, jump onto windows and ride along, or peek over the top of one.
+- Pounces at your pointer when it comes close. Optional extras: climb onto windows from behind (and ride along when you move them), hang off edges, peek over the top, or chase your cursor.
 - Two cats to choose from, sizes 1×–6×, and Calm / Normal / Lively moods.
 
 Clicks pass straight through everything but the cat. It rests during full-screen apps and Low Power Mode. No accounts, no network, no special permissions.

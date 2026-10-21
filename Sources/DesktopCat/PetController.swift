@@ -34,6 +34,13 @@ final class PetController {
     private(set) var windows: [WindowRect] = []
     private(set) var ledges: [Ledge] = []
     private var ridingFrame: CGRect?
+    /// When the cat may leave the window it's on (it likes to stay up there a while).
+    private var leaveLedgeAt = 0.0
+    /// Recent sideways speeds of the window being ridden, to spot a shake.
+    private var rideSpeeds: [(t: Double, vx: Double)] = []
+    private var lastRideScan = 0.0
+    /// The sprite's lean while riding a moving window (radians) and how fast it's swinging.
+    private var lean = 0.0, leanSpeed = 0.0
     private var scanIn = 0.0
     private(set) var fullScreenActive = false
     private(set) var reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
@@ -169,6 +176,7 @@ final class PetController {
         if scanIn <= 0 { scanWindows() }
         if settings.paused || autoPauseReason != nil { windDown(dt); return }
         restState = nil
+        updateLean(dt)
         care.tick(dt, floor: floorRect)
         if isDragging {
             engine.tick(dt) // Keep dangling animated while carried.
@@ -187,6 +195,7 @@ final class PetController {
             feedSenses()
             feedGestures(now)
             extras.maybeChase(dt: dt)
+            if !extras.isActive { extras.maybePounce(dt: dt) }
             if !extras.isActive { brain.update(dt) }
         }
         placeWindow()
@@ -274,7 +283,7 @@ final class PetController {
     }
 
     private func render() {
-        window.spriteView.show(engine.frame, facingRight: brain.facingRight)
+        window.spriteView.show(engine.frame, facingRight: brain.facingRight, lean: lean)
     }
 
     // MARK: - Click-through
@@ -419,7 +428,8 @@ final class PetController {
             windows = []; ledges = []; fullScreenActive = false; scanIn = 1
             return
         }
-        scanIn = wantWindows ? 0.2 : 1
+        // Often while riding a window, so the cat moves smoothly with it.
+        scanIn = !wantWindows ? 1 : surface == .floor ? 0.2 : 1.0 / 30
         let screen = currentScreen()
         windows = WindowScanner.scan()
         fullScreenActive = WindowGeometry.hasFullScreenWindow(windows, screenFrame: screen.frame)
@@ -432,11 +442,16 @@ final class PetController {
     private func followLedge() {
         guard case let .ledge(id) = surface, fallVelocity == nil, !isDragging, !extras.isActive else { return }
         guard canStandOnWindows, let w = windows.first(where: { $0.id == id }) else { startFall(vy: 0); return }
+        let now = CACurrentMediaTime()
         if let old = ridingFrame {
-            brain.x += Double(w.frame.minX - old.minX)
+            let dx = Double(w.frame.minX - old.minX)
+            brain.x += dx
             y += Double(w.frame.maxY - old.maxY)
+            if dx != 0 || w.frame.maxY != old.maxY { feelRide(dx: dx, now: now) } else { rideSpeeds = [] }
         }
+        lastRideScan = now
         ridingFrame = w.frame
+        if fallVelocity != nil { return } // Shaken off.
         guard let l = ledges.first(where: { $0.windowID == id && $0.supports(catX: brain.x, catWidth: brain.spriteWidth) }) else {
             startFall(vy: 0)
             return
@@ -444,6 +459,37 @@ final class PetController {
         y = l.y
         brain.floorRange = l.catRange(catWidth: brain.spriteWidth)
     }
+
+    /// The window under the cat moved: lean against the motion, and fall off if it's being shaken.
+    private func feelRide(dx: Double, now: Double) {
+        let dt = max(now - lastRideScan, 1.0 / 60)
+        let vx = dx / dt
+        let previous = rideSpeeds.last?.vx ?? 0
+        rideSpeeds.append((now, vx))
+        rideSpeeds.removeAll { now - $0.t > 0.8 }
+        // Speeding up tips the cat backwards (a gentle push on the lean spring).
+        leanSpeed += max(-8, min(8, -(vx - previous) / 300))
+        // A shake: the window whips back and forth quickly a few times.
+        let fast = rideSpeeds.filter { abs($0.vx) > 500 }
+        var flips = 0
+        for (a, b) in zip(fast, fast.dropFirst()) where (a.vx > 0) != (b.vx > 0) { flips += 1 }
+        if flips >= 2 {
+            rideSpeeds = []
+            tossVelocity = max(-450, min(450, vx * 0.3))
+            brain.interrupt()
+            startFall(vy: -250) // Flung up a little, then down.
+        }
+    }
+
+    /// The lean settles back upright like a spring.
+    private func updateLean(_ dt: Double) {
+        leanSpeed += (-70 * lean - 9 * leanSpeed) * dt
+        lean = max(-0.25, min(0.25, lean + leanSpeed * dt))
+        if surface == .floor || isDragging { lean = 0; leanSpeed = 0 }
+    }
+
+    /// Up on a window, the cat stays put a good while before thinking about coming down.
+    var readyToLeaveLedge: Bool { CACurrentMediaTime() >= leaveLedgeAt }
 
     /// Start falling from where the cat is now (it lands on a window top or the floor).
     func startFall(vy: Double) {
@@ -459,6 +505,8 @@ final class PetController {
     func landed(on s: Surface) {
         surface = s
         if case let .ledge(id) = s, let l = ledges.first(where: { $0.windowID == id }) {
+            leaveLedgeAt = CACurrentMediaTime() + Double.random(in: 90...240)
+            rideSpeeds = []
             ridingFrame = windows.first { $0.id == id }?.frame
             brain.floorRange = l.catRange(catWidth: brain.spriteWidth)
         } else {
