@@ -39,7 +39,12 @@ cat > $APP/Contents/Info.plist <<PLIST
   <key>NSHumanReadableCopyright</key><string>Free and offline.</string>
 </dict></plist>
 PLIST
-codesign --force --sign - $APP
+# GitHub's release builds sign with Developer ID + hardened runtime + timestamp, as Apple's notarization needs.
+if [[ -n "$SIGN_IDENTITY" ]]; then
+  codesign --force --sign "$SIGN_IDENTITY" --options runtime --timestamp $APP
+else
+  codesign --force --sign - $APP
+fi
 echo "Built $APP"
 
 if [[ "$1" == "dist" ]]; then
