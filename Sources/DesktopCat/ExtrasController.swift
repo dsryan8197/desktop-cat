@@ -26,6 +26,7 @@ final class ExtrasController {
         case pounceAt(x: Double)           // the same leap, to a set spot
         case playOnce(String)              // play an action through to its end
         case tossYarn                      // the show's finale: a yarn ball to chase
+        case watchForPlay(seconds: Double) // after a pounce: sit and see if you play back
     }
 
     private var steps: [Step] = []
@@ -49,6 +50,21 @@ final class ExtrasController {
     private var chaseStarted = 0.0
     private var pounceCooldown = 3.0
     private var cursorNearFor = 0.0
+    /// Where the pointer was at the last pounce. A pointer left there is "caught": no more
+    /// pounces until it moves well away.
+    private var pouncedAt: CGPoint?
+    private var watchStarted = 0.0
+    /// When he last started a game on his own (a chase or pounce you didn't invite).
+    private var selfStarts: [TimeInterval] = []
+    private var lowAndMovingFor = 0.0
+
+    /// He starts at most 2 games of his own every 5 minutes. Once you play back, the game isn't capped.
+    private var mayStartOnHisOwn: Bool {
+        let now = ProcessInfo.processInfo.systemUptime
+        selfStarts.removeAll { now - $0 > 300 }
+        return selfStarts.count < 2
+    }
+    private func noteSelfStart() { selfStarts.append(ProcessInfo.processInfo.systemUptime) }
 
     static let gravity = 2600.0
 
@@ -103,7 +119,7 @@ final class ExtrasController {
         let centerX = brain.x + catW / 2
         let dx = Double(mouse.x) - centerX
         // Not while you're holding the mouse button (dragging a window, selecting text).
-        let near = pet.settings.pounceAtCursor && motionAllowed && !isActive &&
+        let near = pet.settings.pounceAtCursor && motionAllowed && !isActive && !userBusy && pouncedAt == nil &&
             NSEvent.pressedMouseButtons == 0 && !pet.ridingMovingWindow &&
             brain.bowl == nil && brain.yarn == nil &&
             ["idle_sit", "walk", "blink", "look_up", "look_down", "sit_back"].contains(engine.currentID) &&
@@ -112,29 +128,48 @@ final class ExtrasController {
             Double(mouse.y) > pet.y - catH * 0.2 && Double(mouse.y) < pet.y + catH * 1.1
         cursorNearFor = near ? cursorNearFor + dt : 0
         // Watch it for a moment first (it's stalking), then go for it.
-        guard near, pounceCooldown <= 0, cursorNearFor > 0.6 else { return }
+        guard near, pounceCooldown <= 0, cursorNearFor > 0.6, mayStartOnHisOwn else { return }
+        noteSelfStart()
         pounceCooldown = Double.random(in: 6...14)
         cursorNearFor = 0
         pounceDir = dx > 0 ? 1 : -1
         brain.facingRight = pounceDir > 0
-        run([.stalk(seconds: Double.random(in: 1.2...1.7), atPointer: true), .pounceAtAim, .play("idle_sit", seconds: 0.6)])
+        run([.stalk(seconds: Double.random(in: 1.2...1.7), atPointer: true), .pounceAtAim, .watchForPlay(seconds: 3)])
+    }
+
+    /// You're working, not playing: typed in the last few seconds or just clicked.
+    /// (Same no-permission timers the cat uses to notice you've gone away.)
+    private var userBusy: Bool {
+        CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown) < 3 ||
+            CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .leftMouseDown) < 5
+    }
+
+    private func trackMouse(_ dt: Double) {
+        clock += dt
+        let mouse = NSEvent.mouseLocation
+        if hypot(mouse.x - lastMouse.x, mouse.y - lastMouse.y) > 2 { lastMouseMoved = clock }
+        lastMouse = mouse
+        if let p = pouncedAt, hypot(mouse.x - p.x, mouse.y - p.y) > catW * 1.5 { pouncedAt = nil }
     }
 
     /// Chasing starts on its own when the pointer is moving near the cat's level.
     func maybeChase(dt: Double) {
-        clock += dt
+        trackMouse(dt)
         chaseCooldown -= dt
         let mouse = NSEvent.mouseLocation
-        if hypot(mouse.x - lastMouse.x, mouse.y - lastMouse.y) > 2 { lastMouseMoved = clock }
-        lastMouse = mouse
-        guard pet.settings.chaseCursor, motionAllowed, !isActive, chaseCooldown <= 0,
-              NSEvent.pressedMouseButtons == 0, !pet.ridingMovingWindow,
-              brain.bowl == nil, brain.yarn == nil,
-              ["idle_sit", "walk", "run", "blink", "look_up", "look_down", "sit_back"].contains(engine.currentID),
-              clock - lastMouseMoved < 0.3,
-              pet.currentScreen().frame.contains(mouse), !pet.window.frame.contains(mouse),
-              Double(mouse.y) < pet.y + catH * 3,
-              abs(Double(mouse.x) - (brain.x + catW / 2)) > catW * 0.8 else { return }
+        let tempting = pet.settings.chaseCursor && motionAllowed && !isActive && chaseCooldown <= 0 && !userBusy &&
+              NSEvent.pressedMouseButtons == 0 && !pet.ridingMovingWindow &&
+              brain.bowl == nil && brain.yarn == nil &&
+              ["idle_sit", "walk", "run", "blink", "look_up", "look_down", "sit_back"].contains(engine.currentID) &&
+              clock - lastMouseMoved < 0.3 &&
+              pet.currentScreen().frame.contains(mouse) && !pet.window.frame.contains(mouse) &&
+              Double(mouse.y) < pet.y + catH * 3 &&
+              abs(Double(mouse.x) - (brain.x + catW / 2)) > catW * 0.8
+        // A quick trip down to click something isn't play: the pointer has to hang about low for a second.
+        lowAndMovingFor = tempting ? lowAndMovingFor + dt : 0
+        guard lowAndMovingFor >= 1, mayStartOnHisOwn else { return }
+        lowAndMovingFor = 0
+        noteSelfStart()
         chaseStarted = clock
         run([.chase])
     }
@@ -357,6 +392,7 @@ final class ExtrasController {
     func tick(_ dt: Double) {
         guard let step = current else { return }
         t += dt
+        trackMouse(dt) // keep the chase clock running through stalks and pounces too
         if update(step, dt) { next() }
         if let e = emergeY, hidden, pet.y > e + 1 { emergeY = nil; restoreLevel() }
         pet.placeWindowExactly()
@@ -419,6 +455,7 @@ final class ExtrasController {
             engine.request("stretch", force: true) // Its opening is a play bow; we hold the second frame.
             bowHeld = false
         case .pounceAtAim:
+            pouncedAt = NSEvent.mouseLocation
             beginPounce(at: Double(NSEvent.mouseLocation.x) - catW / 2) // Where the pointer is now.
         case let .pounceAt(x):
             beginPounce(at: x)
@@ -426,6 +463,9 @@ final class ExtrasController {
             engine.request(id, force: true)
         case .tossYarn:
             pet.tossYarn()
+        case .watchForPlay:
+            watchStarted = clock
+            engine.request("idle_sit", force: true)
         }
     }
 
@@ -474,7 +514,7 @@ final class ExtrasController {
                 let mouse = NSEvent.mouseLocation
                 let dx = Double(mouse.x) - (brain.x + catW / 2)
                 // Lost it (moved far away or up out of reach): stand back up.
-                if abs(dx) > catW * 3.2 || Double(mouse.y) > pet.y + catH * 1.6 || NSEvent.pressedMouseButtons != 0 {
+                if abs(dx) > catW * 3.2 || Double(mouse.y) > pet.y + catH * 1.6 || NSEvent.pressedMouseButtons != 0 || userBusy {
                     if case .pounceAtAim = steps.first { steps.removeFirst() }
                     if steps.isEmpty { steps = [.play("idle_sit", seconds: 0.4)] }
                     return true
@@ -491,6 +531,22 @@ final class ExtrasController {
             return (engine.currentID != id && t > 0.05) || t > 6
         case .tossYarn:
             return true
+        case let .watchForPlay(seconds):
+            let mouse = NSEvent.mouseLocation
+            let nearby = abs(Double(mouse.x) - (brain.x + catW / 2)) < catW * 4 && Double(mouse.y) < pet.y + catH * 3
+            if lastMouseMoved > watchStarted && nearby && !userBusy {
+                // You moved the pointer near him again: you're playing. Game on.
+                steps = pet.settings.chaseCursor ? [.chase] : []
+                return true
+            }
+            if t >= seconds || userBusy {
+                // You didn't: he loses interest, has a wash, and leaves the pointer alone for a while.
+                steps = [.playOnce("groom")]
+                chaseCooldown = Double.random(in: 45...90)
+                pounceCooldown = chaseCooldown
+                return true
+            }
+            return false
         case .pounceAtAim, .pounceAt:
             // Frame 1 (crouch) shows briefly, frames 2-4 are the leap: move in an arc during those.
             let airStart = 0.06 + FrameTiming.secondsPerFrame("pounce"), air = 3 * FrameTiming.secondsPerFrame("pounce")
@@ -506,22 +562,22 @@ final class ExtrasController {
 
     private func updateChase(_ dt: Double) -> Bool {
         let mouse = NSEvent.mouseLocation
-        clock += dt
-        if hypot(mouse.x - lastMouse.x, mouse.y - lastMouse.y) > 2 { lastMouseMoved = clock }
-        lastMouse = mouse
-        // Lose interest after a while, or when the pointer stops or leaves.
-        if clock - lastMouseMoved > 2.5 || clock - chaseStarted > 15 || !pet.currentScreen().frame.contains(mouse) {
+        // Lose interest after a while, or when the pointer stops or leaves, or you get back to work.
+        if clock - lastMouseMoved > 2.5 || clock - chaseStarted > 15 || !pet.currentScreen().frame.contains(mouse) || userBusy {
             chaseCooldown = 20
             engine.request("idle_sit", force: true)
             return true
         }
         let target = clampToSurface(Double(mouse.x) - catW / 2)
         if abs(target - brain.x) < catW * 0.35 {
-            if Double(mouse.y) < pet.y + catH * 1.5 {
-                // Close and low: crouch, pounce. Then keep chasing.
+            if pouncedAt != nil {
+                // Already caught it there: sit and see if you play.
+                steps = [.watchForPlay(seconds: 3)]
+            } else if Double(mouse.y) < pet.y + catH * 1.5 {
+                // Close and low: crouch, pounce. Then see if you play back.
                 pounceDir = Double(mouse.x) >= brain.x + catW / 2 ? 1 : -1
                 brain.facingRight = pounceDir > 0
-                steps = [.stalk(seconds: Double.random(in: 0.8...1.1), atPointer: true), .pounceAtAim, .chase]
+                steps = [.stalk(seconds: Double.random(in: 0.8...1.1), atPointer: true), .pounceAtAim, .watchForPlay(seconds: 3)]
             } else {
                 // Out of reach above: just look up at it.
                 steps = [.play("look_up", seconds: 1.5)]
